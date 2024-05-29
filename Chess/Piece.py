@@ -2,7 +2,6 @@ class Piece:
     def __init__(self, name, color):
         self.color = color
         self.name = name
-    pass
 
 class Pawn(Piece):
     def __init__(self, name, color):
