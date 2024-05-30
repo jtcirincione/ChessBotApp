@@ -1,4 +1,4 @@
-from Piece import Piece
+from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 class Dragger:
     def __init__(self):
         self.prevRow = self.prevCol =self.postRow = self.postCol = 0
@@ -16,11 +16,17 @@ class Dragger:
         self.postCol = y
         self.is_dragging = False
         board[self.prevRow][self.prevCol] = "--"
-        print(f"prevRow: {self.prevRow}, prevCol: {self.prevCol}\npostRow:{self.postRow}, postCol: {self.postCol}")
         board[self.postRow][self.postCol] = self.piece
-        
-    
+        ## if pawn, set moved to true
+        if isinstance(self.piece, Pawn):
+            self.piece.moved()
+                
         return board
+   
+    def undrag(self):
+        self.is_dragging = False
+        self.prevRow = self.prevCol =self.postRow = self.postCol = 0
+        self.piece = None
 
     def get_piece(self)-> Piece:
         return self.piece

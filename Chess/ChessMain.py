@@ -34,7 +34,7 @@ def show_bg(surface):
 def coord_to_idx(posX:int, posY:int) -> tuple:
   x = posX // SQ_SIZE
   y = posY // SQ_SIZE
-  print(posX, posY)
+  # print(posX, posY)
   return (x, y)
 
 p.init()
@@ -56,10 +56,14 @@ while not exit:
           col, row = coord_to_idx(posX, posY)
           if not dragger.is_dragging:
             dragger.update_pos(game.board, row, col)
-            print("first click")
+            # print("first click")
           else:
-            print("Second click")
-            game.is_valid_move(dragger.get_piece(), dragger.prevRow, dragger.prevCol, row, col)
-            game.board = dragger.drag(game.board, row, col)
+            # print("Second click")
+            v = game.is_valid_move(piece=dragger.get_piece(), board=game.board, init_row=dragger.prevRow, init_col=dragger.prevCol, move_row=row, move_col=col)
+            if v:
+              game.board = dragger.drag(game.board, row, col)
+              dragger.undrag()
+            else:
+              dragger.undrag()
     p.display.update() 
     

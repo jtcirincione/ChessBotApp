@@ -35,11 +35,13 @@ class GameState():
   #   # surface.blit(images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
   #   pass
     
-  def is_valid_move(self, piece, init_row, init_col, move_row, move_col) -> bool:
+  def is_valid_move(self, piece, board, init_row, init_col, move_row, move_col) -> bool:
+    is_valid = False
     if isinstance(piece, Pawn):
-      pass
+      is_valid = piece.is_valid(board, init_row, init_col, move_row, move_col)
+      # print(is_valid)
     elif isinstance(piece, Rook):
-      pass
+      is_valid = piece.is_valid(board, init_row, init_col, move_row, move_col)
     elif isinstance(piece, Knight):
       pass
     elif isinstance(piece, Bishop):
@@ -50,4 +52,4 @@ class GameState():
       pass
     
     ## cut down on code and instead write valid move logic in piece classes for each piece, and just make 1 method call here.
-    return 0
+    return is_valid
