@@ -56,10 +56,8 @@ while not exit:
           col, row = coord_to_idx(posX, posY)
           if not dragger.is_dragging:
             dragger.update_pos(game.board, row, col)
-            # print("first click")
           else:
-            # print("Second click")
-            v = game.is_valid_move(piece=dragger.get_piece(), board=game.board, init_row=dragger.prevRow, init_col=dragger.prevCol, move_row=row, move_col=col)
+            v = game.is_valid_move(piece=dragger.get_piece(), board=game.board, init_row=dragger.prevRow, init_col=dragger.prevCol, move_row=row, move_col=col, canvas=canvas)
             if v:
               game.board = dragger.drag(game.board, row, col)
               dragger.undrag()
