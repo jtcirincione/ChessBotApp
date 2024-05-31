@@ -6,9 +6,10 @@ class Dragger:
         self.is_dragging = False
     
     def update_pos(self, board: list, x: int, y: int) -> None:
+        if board[x][y] == '--': return
+        self.piece = board[x][y]
         self.prevRow = x
         self.prevCol = y
-        self.piece = board[x][y]
         self.is_dragging = True
     
     def drag(self, board: list, x: int, y: int) -> list:

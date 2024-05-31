@@ -63,5 +63,6 @@ while not exit:
               dragger.undrag()
             else:
               dragger.undrag()
+              continue
     p.display.update() 
     

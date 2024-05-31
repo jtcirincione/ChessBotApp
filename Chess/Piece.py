@@ -9,143 +9,6 @@ class Piece:
         self.color:str = color
         self.name:str = name
         self.opponent:str = "white" if color == "black" else "black"
-
-class Pawn(Piece):
-    def __init__(self, name, color):
-        super().__init__(name, color)
-        self.has_moved = False
-    
-    def moved(self) -> None:
-        self.has_moved = True
-        
-    def is_valid(self, board:list, row:int, col:int, moveRow:int, moveCol:int):
-        moves = []
-        is_blocked = False
-        
-        if self.has_moved == False:
-            if self.color == "white":
-                if row - 1 >= 0 and board[row-1][col] == "--": moves.append((row - 1, col))
-                if row - 2 >= 0 and board[row-2][col] == "--" and board[row-1][col] == "--": moves.append((row - 2, col))
-            ## if black pawn being moved 
-            else:
-                if row + 1 < 8 and board[row+1][col] == "--": moves.append((row + 1, col))
-                if row + 2 < 8 and board[row+2][col] == "--" and board[row+1][col] == "--": moves.append((row + 2, col))
-        else:
-            if self.color == "white":
-                if row - 1 >= 0 and board[row-1][col] == "--": moves.append((row - 1, col))
-            else:
-                if row + 1 >= 0 and board[row+1][col] == "--": moves.append((row + 1, col))
-        
-        
-        if self.color == "white":
-            ##check diagonal left piece
-            if row - 1 >= 0 and col-1 >= 0:
-                if board[row-1][col-1] != "--":
-                    if board[row-1][col-1].color == self.opponent:
-                        moves.append((row-1, col-1))
-                    
-            ##check diagonal right piece
-            if row - 1 >= 0 and col+1 < 8:
-                if board[row-1][col+1] != "--":
-                    if board[row-1][col+1].color == self.opponent:
-                        moves.append((row-1, col+1))
-        ## if piece is black
-        else:
-            ##check diagonal left piece
-            if row+1 <= 8 and col-1 >= 0:
-                if board[row+1][col-1] != "--":
-                    print(board[row+1][col-1])
-                    if board[row+1][col-1].color == self.opponent:
-                        moves.append((row+1, col-1))
-                    
-            ##check diagonal right piece
-            if row+1 <= 8 and col+1 < 8:
-                if board[row+1][col+1] != "--":
-                    print(board[row+1][col-1])
-                    if board[row+1][col+1].color == self.opponent:
-                        moves.append((row+1, col+1))
-        return (moveRow, moveCol) in moves
-        
-    
-    
-class Knight(Piece):
-    def __init__(self, name, color):
-        super().__init__(name, color)
-        
-    def validMoves(self, row, col):
-        pass
-class Bishop(Piece):
-    def __init__(self, name, color):
-        super().__init__(name, color)
-    
-    def left_diagonal(self, board, row, col) -> list:
-        moves = []
-        ## Top left diagonal
-        for i in range(row-1, -1, -1):
-            for j in range(col-1, -1, -1):
-                if board[i][j] == "--":
-                    moves.append((i, j))
-                elif board[i][j].color == self.opponent:
-                    moves.append((i, j))
-                    break
-                else:
-                    break
-            
-        ## Bottom part of diagonal
-        for i in range(row+1, 8,):
-            for j in range(col+1, 8):
-                if board[i][j] == "--":
-                    moves.append((i, j))
-                elif board[i][j].color == self.opponent:
-                    moves.append((i, j))
-                    break
-                else:
-                    break
-        return moves
-    
-    def right_diagonal(self, board, row, col) -> list:
-        moves = []
-        ## Top right diagonal
-        for i in range(row-1, -1, -1):
-            for j in range(col+1, 8):
-                if board[i][j] == "--":
-                    moves.append((i, j))
-                elif board[i][j].color == self.opponent:
-                    moves.append((i, j))
-                    break
-                else:
-                    break
-            
-        ## Bottom part of diagonal
-        for i in range(row+1, 8,):
-            for j in range(col-1, -1, -1):
-                if board[i][j] == "--":
-                    moves.append((i, j))
-                elif board[i][j].color == self.opponent:
-                    moves.append((i, j))
-                    break
-                else:
-                    break
-        return moves
-    
-    def is_valid(self, board:list, row:int, col:int, moveRow:int, moveCol:int, surface) -> bool:
-        moves = []
-        moves = self.left_diagonal(board=board, row=row, col=col)
-        moves += self.right_diagonal(board=board, row=row, col=col)
-        print(moves)
-        for row, col in moves:
-            rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-            color = (255, 0, 0)
-            p.draw.rect(surface, color, rect)
-        return (moveRow, moveCol) in moves
-class Rook(Piece):
-    def __init__(self, name, color):
-        super().__init__(name, color)
-        
-    def is_valid(self, board, row, col, moveRow, moveCol):
-        moves = self.rank_moves(board, row, col)
-        moves += self.file_moves(board, row, col)
-        return (moveRow, moveCol) in moves
     
     def rank_moves(self, board, row, col):
         moves = []
@@ -191,6 +54,176 @@ class Rook(Piece):
                 break
         return moves
     
+    def left_diagonal(self, board, row, col) -> list:
+        moves = []
+        ## Top left diagonal
+        j = col - 1
+        for i in range(row-1, -1, -1):
+            if j < 0:
+                break
+            if board[i][j] == "--":
+                moves.append((i, j))
+            elif board[i][j].color == self.opponent:
+                moves.append((i, j))
+                break
+            else:
+                break
+            j -= 1
+            
+        ## Bottom part of diagonal
+        leave = False
+        j = col + 1
+        for i in range(row+1, 8,):
+            if j > 7:
+                break
+            if board[i][j] == "--":
+                moves.append((i, j))
+            elif board[i][j].color == self.opponent:
+                moves.append((i, j))
+                leave = True
+                break
+            else:
+                leave = True
+                break
+            j += 1
+        return moves
+    
+    def right_diagonal(self, board, row, col) -> list:
+        moves = []
+        ## Top right diagonal
+        j = col + 1
+        for i in range(row-1, -1, -1):
+            if j > 7:
+                break
+            if board[i][j] == "--":
+                moves.append((i, j))
+            elif board[i][j].color == self.opponent:
+                moves.append((i, j))
+                leave = True
+                break
+            else:
+                leave = True
+                break
+            j += 1
+            
+        ## Bottom part of diagonal
+        j = col-1
+        for i in range(row+1, 8,):
+            if j < 0:
+                break
+            if board[i][j] == "--":
+                moves.append((i, j))
+            elif board[i][j].color == self.opponent:
+                moves.append((i, j))
+                break
+            else:
+                break
+            j -= 1
+        return moves
+
+class Pawn(Piece):
+    def __init__(self, name, color):
+        super().__init__(name, color)
+        self.has_moved = False
+        self.promote_row = 0 if self.color == 'white' else 7
+    
+    def moved(self) -> None:
+        self.has_moved = True
+        
+    def is_valid(self, board:list, row:int, col:int, moveRow:int, moveCol:int):
+        moves = []
+        is_blocked = False
+        
+        if self.has_moved == False:
+            if self.color == "white":
+                if row - 1 >= 0 and board[row-1][col] == "--": moves.append((row - 1, col))
+                if row - 2 >= 0 and board[row-2][col] == "--" and board[row-1][col] == "--": moves.append((row - 2, col))
+            ## if black pawn being moved 
+            else:
+                if row + 1 < 8 and board[row+1][col] == "--": moves.append((row + 1, col))
+                if row + 2 < 8 and board[row+2][col] == "--" and board[row+1][col] == "--": moves.append((row + 2, col))
+        else:
+            if self.color == "white":
+                if row - 1 >= 0 and board[row-1][col] == "--": moves.append((row - 1, col))
+            else:
+                if row + 1 >= 0 and board[row+1][col] == "--": moves.append((row + 1, col))
+        
+        
+        if self.color == "white":
+            ##check diagonal left piece
+            if row - 1 >= 0 and col-1 >= 0:
+                if board[row-1][col-1] != "--":
+                    if board[row-1][col-1].color == self.opponent:
+                        moves.append((row-1, col-1))
+                    
+            ##check diagonal right piece
+            if row - 1 >= 0 and col+1 < 8:
+                if board[row-1][col+1] != "--":
+                    if board[row-1][col+1].color == self.opponent:
+                        moves.append((row-1, col+1))
+        ## if piece is black
+        else:
+            ##check diagonal left piece
+            if row+1 <= 8 and col-1 >= 0:
+                if board[row+1][col-1] != "--":
+                    if board[row+1][col-1].color == self.opponent:
+                        moves.append((row+1, col-1))
+                    
+            ##check diagonal right piece
+            if row+1 <= 8 and col+1 < 8:
+                if board[row+1][col+1] != "--":
+                    if board[row+1][col+1].color == self.opponent:
+                        moves.append((row+1, col+1))
+        return (moveRow, moveCol) in moves
+        
+    
+    
+class Knight(Piece):
+    def __init__(self, name, color):
+        super().__init__(name, color)
+        
+    def is_valid(self, board, row, col, moveRow, moveCol):
+        idxs = [
+            (row-2, col-1),
+            (row-1, col-2),
+            (row-2, col+1),
+            (row-1, col+2),
+            (row+2, col-1),
+            (row+1, col-2),
+            (row+2, col+1),
+            (row+1, col+2)
+        ]
+        moves = []
+        for i, j in idxs:
+            if (i < 0 or i > 7 or j < 0 or j > 7):
+                continue
+            if board[i][j] == "--":
+                moves.append((i, j))
+            elif board[i][j].color == self.opponent:
+                moves.append((i, j))
+                
+        return (moveRow, moveCol) in moves
+class Bishop(Piece):
+    def __init__(self, name, color):
+        super().__init__(name, color)
+    
+    
+    def is_valid(self, board:list, row:int, col:int, moveRow:int, moveCol:int) -> bool:
+        moves = []
+        moves = self.left_diagonal(board=board, row=row, col=col)
+        moves += self.right_diagonal(board=board, row=row, col=col)
+        return (moveRow, moveCol) in moves
+class Rook(Piece):
+    def __init__(self, name, color):
+        super().__init__(name, color)
+        
+    def is_valid(self, board, row, col, moveRow, moveCol):
+        moves = self.rank_moves(board, row, col)
+        moves += self.file_moves(board, row, col)
+        return (moveRow, moveCol) in moves
+    
+    
+    
 class King(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
@@ -226,5 +259,11 @@ class Queen(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
         
-    def validMoves(self, row, col):
-        pass
+    def is_valid(self, board:list, row:int, col:int, moveRow:int, moveCol:int) -> bool:
+        moves = []
+        moves += self.rank_moves(board=board, row=row, col=col)
+        moves += self.file_moves(board=board, row=row, col=col)
+        moves += self.left_diagonal(board=board, row=row, col=col)
+        moves += self.right_diagonal(board=board, row=row, col=col)
+        
+        return (moveRow, moveCol) in moves

@@ -36,20 +36,4 @@ class GameState():
   #   pass
     
   def is_valid_move(self, piece:Piece, board:list, init_row:int, init_col:int, move_row:int, move_col:int, canvas) -> bool:
-    is_valid: bool = False
-    if isinstance(piece, Pawn):
-      is_valid = piece.is_valid(board, init_row, init_col, move_row, move_col)
-      # print(is_valid)
-    elif isinstance(piece, Rook):
-      is_valid = piece.is_valid(board, init_row, init_col, move_row, move_col)
-    elif isinstance(piece, Knight):
-      pass
-    elif isinstance(piece, Bishop):
-      is_valid = piece.is_valid(board=board, row=init_row, col=init_col, moveRow=move_row, moveCol=move_col, surface=canvas)
-    elif isinstance(piece, Queen):
-      pass
-    elif isinstance(piece, King):
-      is_valid = piece.is_valid(board, init_row, init_col, move_row, move_col)
-    
-    ## cut down on code and instead write valid move logic in piece classes for each piece, and just make 1 method call here.
-    return is_valid
+    return piece.is_valid(board=board, row=init_row, col=init_col, moveRow=move_row, moveCol=move_col)
