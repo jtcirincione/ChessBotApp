@@ -29,5 +29,11 @@ class Dragger:
         self.prevRow = self.prevCol =self.postRow = self.postCol = 0
         self.piece = None
 
-    def get_piece(self)-> Piece:
+    def get_piece(self) -> Piece:
         return self.piece
+    
+    def get_moves(self) -> list:
+        return None
+
+    def get_moved_location(self) -> tuple:
+        return (self.postRow, self.postCol)
