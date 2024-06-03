@@ -13,23 +13,24 @@ class Piece:
         self.name: str = name
         self.opponent: str = "white" if color == "black" else "black"
 
+
     def rank_moves(self, board, row, col):
         moves = []
         # look at each move to the left of piece
         for i in range(col - 1, -1, -1):
             if board[row][i] == "--":
-                moves.append((row, i))
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=i))
             elif board[row][i].color == self.opponent:
-                moves.append((row, i))
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=i))
                 break
             else:
                 break
         # look at each move to the right of piece
         for i in range(col + 1, 8):
             if board[row][i] == "--":
-                moves.append((row, i))
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=i))
             elif board[row][i].color == self.opponent:
-                moves.append((row, i))
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=i))
                 break
             else:
                 break
@@ -40,18 +41,18 @@ class Piece:
         # look at each move above a piece
         for i in range(row - 1, -1, -1):
             if board[i][col] == "--":
-                moves.append((i, col))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=col))
             elif board[i][col].color == self.opponent:
-                moves.append((i, col))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=col))
                 break
             else:
                 break
         # look at each move to below a piece
         for i in range(row+1, 8):
             if board[i][col] == "--":
-                moves.append((i, col))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=col))
             elif board[i][col].color == self.opponent:
-                moves.append((i, col))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=col))
                 break
             else:
                 break
@@ -65,9 +66,9 @@ class Piece:
             if j < 0:
                 break
             if board[i][j] == "--":
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
             elif board[i][j].color == self.opponent:
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
                 break
             else:
                 break
@@ -80,9 +81,9 @@ class Piece:
             if j > 7:
                 break
             if board[i][j] == "--":
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
             elif board[i][j].color == self.opponent:
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
                 leave = True
                 break
             else:
@@ -99,9 +100,9 @@ class Piece:
             if j > 7:
                 break
             if board[i][j] == "--":
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
             elif board[i][j].color == self.opponent:
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
                 leave = True
                 break
             else:
@@ -115,9 +116,9 @@ class Piece:
             if j < 0:
                 break
             if board[i][j] == "--":
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
             elif board[i][j].color == self.opponent:
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
                 break
             else:
                 break
@@ -134,112 +135,112 @@ class Pawn(Piece):
     def moved(self) -> None:
         self.has_moved = True
 
-    def is_valid(self, board: list, row: int, col: int, moveRow: int, moveCol: int):
+    def valid_moves(self, board: list, row: int, col: int):
         moves = []
         is_blocked = False
 
         if self.has_moved == False:
             if self.color == "white":
                 if row - 1 >= 0 and board[row-1][col] == "--":
-                    moves.append((row - 1, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row - 1, fin_col=col))
                 if row - 2 >= 0 and board[row-2][col] == "--" and board[row-1][col] == "--":
-                    moves.append((row - 2, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row - 2, fin_col=col))
             # if black pawn being moved
             else:
                 if row + 1 < 8 and board[row+1][col] == "--":
-                    moves.append((row + 1, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row + 1, fin_col=col))
                 if row + 2 < 8 and board[row+2][col] == "--" and board[row+1][col] == "--":
-                    moves.append((row + 2, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row + 2, fin_col=col))
         else:
             if self.color == "white":
                 if row - 1 >= 0 and board[row-1][col] == "--":
-                    moves.append((row - 1, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row - 1, fin_col=col))
             else:
                 if row + 1 >= 0 and board[row+1][col] == "--":
-                    moves.append((row + 1, col))
+                    moves.append(Move(init_row=row, init_col=col, fin_row=row + 1, fin_col=col))
 
         if self.color == "white":
             # check diagonal left piece
             if row - 1 >= 0 and col-1 >= 0:
                 if board[row-1][col-1] != "--":
                     if board[row-1][col-1].color == self.opponent:
-                        moves.append((row-1, col-1))
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col-1))
 
             # check diagonal right piece
             if row - 1 >= 0 and col+1 < 8:
                 if board[row-1][col+1] != "--":
                     if board[row-1][col+1].color == self.opponent:
-                        moves.append((row-1, col+1))
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col+1))
         # if piece is black
         else:
             # check diagonal left piece
             if row+1 <= 8 and col-1 >= 0:
                 if board[row+1][col-1] != "--":
                     if board[row+1][col-1].color == self.opponent:
-                        moves.append((row+1, col-1))
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col-1))
 
             # check diagonal right piece
             if row+1 <= 8 and col+1 < 8:
                 if board[row+1][col+1] != "--":
                     if board[row+1][col+1].color == self.opponent:
-                        moves.append((row+1, col+1))
-        return (moveRow, moveCol) in moves
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col+1))
+        return moves
 
 
 class Knight(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
 
-    def is_valid(self, board, row, col, moveRow, moveCol):
+    def valid_moves(self, board, row, col):
         idxs = [
-            Move(piece=self, row=row-2, col=col-1),
-            Move(self, row-1, col-2),
-            Move(self, row-2, col+1),
-            Move(self, row-1, col+2),
-            Move(self, row+2, col-1),
-            Move(self, row+1, col-2),
-            Move(self, row+2, col+1),
-            Move(self, row+1, col+2)
+            Move(init_row=row, init_col=col, fin_row=row-2, fin_col=col-1),
+            Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col-2),
+            Move(init_row=row, init_col=col, fin_row=row-2, fin_col=col+1),
+            Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col+2),
+            Move(init_row=row, init_col=col, fin_row=row+2, fin_col=col-1),
+            Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col-2),
+            Move(init_row=row, init_col=col, fin_row=row+2, fin_col=col+1),
+            Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col+2)
         ]
         moves = []
         for move in idxs:
-            i, j = move.get_coordinates()
+            i, j = move.get_final()
             if (i < 0 or i > 7 or j < 0 or j > 7):
                 continue
             if board[i][j] == "--":
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
             elif board[i][j].color == self.opponent:
-                moves.append((i, j))
+                moves.append(Move(init_row=row, init_col=col, fin_row=i, fin_col=j))
 
-        return (moveRow, moveCol) in moves
+        return moves
 
 
 class Bishop(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
 
-    def is_valid(self, board: list, row: int, col: int, moveRow: int, moveCol: int) -> bool:
+    def valid_moves(self, board: list, row: int, col: int) -> bool:
         moves = []
         moves = self.left_diagonal(board=board, row=row, col=col)
         moves += self.right_diagonal(board=board, row=row, col=col)
-        return (moveRow, moveCol) in moves
+        return moves
 
 
 class Rook(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
 
-    def is_valid(self, board, row, col, moveRow, moveCol):
+    def valid_moves(self, board, row, col):
         moves = self.rank_moves(board, row, col)
         moves += self.file_moves(board, row, col)
-        return (moveRow, moveCol) in moves
+        return moves
 
 
 class King(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
 
-    def is_valid(self, board, row, col, moveRow, moveCol):
+    def valid_moves(self, board, row, col):
         moves = []
         # look at rank above piece
         if row-1 >= 0:
@@ -248,7 +249,7 @@ class King(Piece):
                     break
                 if j >= 0:
                     if board[row-1][j] == '--' or board[row-1][j].color == self.opponent:
-                        moves.append((row-1, j))
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=j))
         # look at rank above piece
         if row+1 < 8:
             for j in range(col-1, col + 2):
@@ -256,27 +257,27 @@ class King(Piece):
                     break
                 if j >= 0:
                     if board[row+1][j] == '--' or board[row+1][j].color == self.opponent:
-                        moves.append((row+1, j))
+                        moves.append(Move(init_row=row, init_col=col, fin_row=row+1, fin_col=j))
 
         # look at pieces to right/left
         if col-1 >= 0:
             if board[row][col-1] == '--' or board[row][col-1].color == self.opponent:
-                moves.append((row, col-1))
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=col-1))
         if col+1 < 8:
             if board[row][col+1] == '--' or board[row][col+1].color == self.opponent:
-                moves.append((row, col+1))
-        return (moveRow, moveCol) in moves
+                moves.append(Move(init_row=row, init_col=col, fin_row=row, fin_col=col+1))
+        return moves
 
 
 class Queen(Piece):
     def __init__(self, name, color):
         super().__init__(name, color)
 
-    def is_valid(self, board: list, row: int, col: int, moveRow: int, moveCol: int) -> bool:
+    def valid_moves(self, board: list, row: int, col: int) -> bool:
         moves = []
         moves += self.rank_moves(board=board, row=row, col=col)
         moves += self.file_moves(board=board, row=row, col=col)
         moves += self.left_diagonal(board=board, row=row, col=col)
         moves += self.right_diagonal(board=board, row=row, col=col)
 
-        return (moveRow, moveCol) in moves
+        return moves

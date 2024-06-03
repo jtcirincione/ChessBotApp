@@ -2,6 +2,7 @@
 Responsible for storing all info about the current state of a chess game and validates moves. Keeps a move log.
 """
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
+from Move import Move
 import pygame
 WIDTH = HEIGHT = 512
 # Dimensions of the board
@@ -30,7 +31,7 @@ class GameState():
         self.whiteToMove: bool = True
         self.moveLog: list = []
         self.black_king_check = False
-        self.white_king_check = True
+        self.white_king_check = False
         self.surface = surface
         self.promotions = {
             "Knight": [(7, 7), (0, 6)],
@@ -62,13 +63,37 @@ class GameState():
                     self.surface.blit(
                         images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
 
+    def reset(self):
+        self.board = [
+            [Rook("bR", "black"), Knight("bN", "black"), Bishop("bB", "black"), Queen("bQ", "black"), King(
+                "bK", "black"), Bishop("bB", "black"), Knight("bN", "black"), Rook("bR", "black")],
+            [Pawn("bp", "black"), Pawn("bp", "black"), Pawn("bp", "black"), Pawn("bp", "black"), Pawn(
+                "bp", "black"), Pawn("bp", "black"), Pawn("bp", "black"), Pawn("bp", "black")],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            ["--", "--", "--", "--", "--", "--", "--", "--"],
+            [Pawn("wp", "white"), Pawn("wp", "white"), Pawn("wp", "white"), Pawn("wp", "white"), Pawn(
+                "wp", "white"), Pawn("wp", "white"), Pawn("wp", "white"), Pawn("wp", "white")],
+            [Rook("wR", "white"), Knight("wN", "white"), Bishop("wB", "white"), Queen("wQ", "white"), King(
+                "wK", "white"), Bishop("wB", "white"), Knight("wN", "white"), Rook("wR", "white")]
+        ]
+        self.whiteToMove: bool = True
+        self.moveLog: list = []
+        self.black_king_check = False
+        self.white_king_check = False
+
     # After a move has been made, reblit the moved piece
     # def draw_move(self, surface: pygame.Surface, row: int, col: int, images: dict) -> None:
     #   # surface.blit(images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
     #   pass
 
     def is_valid_move(self, piece: Piece, board: list, init_row: int, init_col: int, move_row: int, move_col: int, canvas) -> bool:
-        return piece.is_valid(board=board, row=init_row, col=init_col, moveRow=move_row, moveCol=move_col)
+        moves:list[Move] = piece.valid_moves(board=board, row=init_row, col=init_col)
+        for move in moves:
+            if (move_row, move_col) == move.get_final():
+                return True
+        return False
 
     def draw_promotions(self, piece: Piece, images: dict) -> None:
         if not isinstance(piece, Pawn):
@@ -120,30 +145,56 @@ class GameState():
 
     def white_to_move(self) -> bool:
         return self.whiteToMove
+    
+    def current_turn(self) -> str:
+        return "white" if self.white_to_move() else "black"
+    
+    def opponent(self) -> str:
+        return "black" if self.white_to_move() else "white"
+    
+    def iam_checked(self) -> bool:
+        if self.current_turn == 'white':
+            if self.white_king_check == True:
+                return True
+        else:
+            if self.black_king_check == True:
+                return True
+        return False
+    
+    #Set the white or black king to checked based on color parameter
+    def set_king_checked(self, color) -> None:
+        if color == "white":
+            self.white_king_check = True 
+        else:
+            self.black_king_check = True
+        
 
-    def rank_moves(self, row, col, opposing_color):
-        moves = []
+    def rank_moves(self, board, row, col, opposing_color):
         # look at each move to the left of piece
         for i in range(col - 1, -1, -1):
-            if self.board[row][i] == "--":
-                moves.append((row, i))
-            elif self.board[row][i].color == self.opponent:
-                moves.append((row, i))
+            piece = board[row][i]
+            if piece == "--":
+                pass
+            elif piece.color == opposing_color:
+                if isinstance(piece, Rook) or isinstance(piece, Queen):
+                    return True
                 break
             else:
                 break
         # look at each move to the right of piece
         for i in range(col + 1, 8):
-            if self.board[row][i] == "--":
-                moves.append((row, i))
-            elif self.board[row][i].color == self.opponent:
-                moves.append((row, i))
+            piece = board[row][i]
+            if piece == "--":
+                pass
+            elif piece.color == opposing_color:
+                if isinstance(piece, Rook) or isinstance(piece, Queen):
+                    return True
                 break
             else:
                 break
-        return moves
+        return False
 
-    def file_moves(self, board, row, col, opposing_color):
+    def file_moves(self, board: list[list[Piece]], row, col, opposing_color):
         moves = []
         # look at each move above a piece
         for i in range(row - 1, -1, -1):
@@ -158,16 +209,18 @@ class GameState():
                 break
         # look at each move to below a piece
         for i in range(row+1, 8):
-            if board[i][col] == "--":
-                moves.append((i, col))
-            elif board[i][col].color == self.opponent:
-                moves.append((i, col))
+            piece = board[i][col]
+            if piece == "--":
+                pass
+            elif piece.color == opposing_color:
+                if isinstance(piece, Rook) or isinstance(piece, Queen):
+                    return True
                 break
             else:
                 break
-        return moves
+        return False
 
-    def left_diagonal(self, board, row, col) -> list:
+    def left_diagonal(self, board, row, col, opposing_color) -> list:
         moves = []
         # Top left diagonal
         j = col - 1
@@ -177,7 +230,7 @@ class GameState():
             piece = board[i][j]
             if piece == "--":
                 pass
-            elif piece.color == self.opponent:
+            elif piece.color == opposing_color:
                 if isinstance(piece, Bishop) or isinstance(piece, Queen):
                     return True
                 break
@@ -191,9 +244,10 @@ class GameState():
         for i in range(row+1, 8,):
             if j > 7:
                 break
-            if board[i][j] == "--":
+            piece = board[i][j]
+            if piece == "--":
                 pass
-            elif board[i][j].color == self.opponent:
+            elif piece.color == opposing_color:
                 if isinstance(piece, Bishop) or isinstance(piece, Queen):
                     return True
                 break
@@ -238,16 +292,88 @@ class GameState():
             j -= 1
         return False
 
+    def knight_moves(self, board, row:int, col:int, opposing_color):
+        idxs = [
+            (row-2, col-1),
+            (row-1, col-2),
+            (row-2, col+1),
+            (row-1, col+2),
+            (row+2, col-1),
+            (row+1, col-2),
+            (row+2, col+1),
+            (row+1, col+2)
+        ]
+        for i, j in idxs:
+            if (i < 0 or i > 7 or j < 0 or j > 7):
+                continue
+            piece = board[i][j]
+            if piece == "--":
+                pass
+            elif piece.color == opposing_color:
+                if isinstance(piece, Knight):
+                    return True
+
+        return False
+
+    def pawn_danger(self, board, row:int, col:int, opposing_color):
+        dangerColLeft = col-1
+        dangerColRight = col + 1
+        if opposing_color == "black":
+            dangerRow = row - 1
+            if dangerRow < 0:
+                return False
+        else:
+            dangerRow = row + 1
+            if dangerRow > 7:
+                return False
+
+        if dangerColLeft >= 0:
+            piece = board[dangerRow][dangerColLeft]
+            if isinstance(piece, Pawn) and piece.color == opposing_color:
+                return True
+        if dangerColRight < 8:
+            piece = board[dangerRow][dangerColRight]
+            if isinstance(piece, Pawn) and piece.color == opposing_color:
+                return True
+        return False
+
     # take in a board as a parameter instead of using self,
     # as we send a board copy simulating a move to check if
     # it exposes the king
     def king_in_check(self, king_chk_color: str, board: list) -> bool:
         piece = None
-        c = "black" if king_chk_color == "white" else "black"
-        for i in range(0, 8):
-            for j in range(0, 8):
+        opposing_color = "black" if king_chk_color == "white" else "white"
+        row = col = None
+        tmp = False
+        for i in range(8):
+            for j in range(8):
                 if isinstance(board[i][j], King):
                     if board[i][j].color == king_chk_color:
+                        tmp = True
                         piece = board[i][j]
+                        row, col = i, j
+                        break
+        if tmp == False:
+            self.board= board
+        in_check = self.pawn_danger(board, row, col, opposing_color) or self.right_diagonal(board, row, col, opposing_color) or self.left_diagonal(board, row, col, opposing_color) or self.file_moves(board, row, col, opposing_color) or self.rank_moves(board, row, col, opposing_color) or self.knight_moves(board, row, col, opposing_color)
+        if in_check:
+            self.set_king_checked(king_chk_color)
+        return in_check
+    
+    def has_valid_moves(self, board, dragger):
+        moves:list[Move] = []
+        for i in range(8):
+            for j in range(8):
+                if isinstance(board[i][j], Piece):
+                    if board[i][j].color == self.current_turn():
+                        piece = board[i][j]
+                        moves += piece.valid_moves(board, i, j)
 
+        for move in moves:
+            init_row, init_col = move.get_initial()
+            fin_row, fin_col = move.get_final()
+            b = dragger.simulate_drag_v2(board, init_row, init_col, fin_row, fin_col)
+            if not self.king_in_check(self.current_turn(), b):
+                return True
+        
         return False

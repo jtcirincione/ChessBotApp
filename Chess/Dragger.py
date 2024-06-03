@@ -1,5 +1,6 @@
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 from ChessEngine import GameState
+import copy
 
 
 class Dragger:
@@ -31,10 +32,18 @@ class Dragger:
         return board
 
     def simulate_drag(self, board: list, x: int, y: int) -> list:
-        board[self.prevRow][self.prevCol] = "--"
-        board[x][y] = self.piece
-        return board
-
+        tmp_board = copy.deepcopy(board)
+        tmp_board[self.prevRow][self.prevCol] = "--"
+        tmp_board[x][y] = self.piece
+        return tmp_board
+    
+    def simulate_drag_v2(self, board, prev_row, prev_col, move_row, move_col):
+        tmp_board = copy.deepcopy(board)
+        piece = tmp_board[prev_row][prev_col]
+        tmp_board[prev_row][prev_col] = "--"
+        tmp_board[move_row][move_col] = piece
+        return tmp_board
+        
     def undrag(self):
         self.is_dragging = False
         self.prevRow = self.prevCol = self.postRow = self.postCol = 0
