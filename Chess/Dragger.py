@@ -23,12 +23,28 @@ class Dragger:
         self.postRow = x
         self.postCol = y
         self.is_dragging = False
-        board[self.prevRow][self.prevCol] = "--"
-        board[self.postRow][self.postCol] = self.piece
         # if pawn, set moved to true
         if isinstance(self.piece, Pawn):
             self.piece.moved()
+            ##TODO: Refactor elsewhere
+            # If pawn moved 2 spots, set en passant to true
+            if abs(self.postRow - self.prevRow) == 2:
+                self.piece.set_passant_active()
+            else:
+                self.piece.set_passant_inactive()
+            ##TODO: Now check if we are moving diagonally to an empty square.
+            ## if we are, remove the piece ether behind or in front of the move location
+            ## depending on current piece's color
+            if board[self.postRow][self.postCol] == "--" and abs(self.postRow - self.prevRow) == 1 and abs(self.postCol - self.prevCol) == 1:
+                print('EN PASSANTED')
+                if self.piece.color == "white":
+                    board[self.postRow + 1][self.postCol] = "--"
+                else:
+                    board[self.postRow - 1][self.postCol] = "--"
 
+
+        board[self.prevRow][self.prevCol] = "--"
+        board[self.postRow][self.postCol] = self.piece
         return board
 
     def simulate_drag(self, board: list, x: int, y: int) -> list:

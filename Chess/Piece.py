@@ -131,9 +131,19 @@ class Pawn(Piece):
         super().__init__(name, color)
         self.has_moved = False
         self.promote_row = 0 if self.color == 'white' else 7
+        self.en_passant = False
 
     def moved(self) -> None:
         self.has_moved = True
+
+    def can_be_passanted(self):
+        return self.en_passant
+    
+    def set_passant_active(self):
+        self.en_passant = True
+    
+    def set_passant_inactive(self):
+        self.en_passant = False
 
     def valid_moves(self, board: list, row: int, col: int):
         moves = []
@@ -165,12 +175,24 @@ class Pawn(Piece):
                 if board[row-1][col-1] != "--":
                     if board[row-1][col-1].color == self.opponent:
                         moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col-1))
+                else:
+                    ## En passant logic
+                    if isinstance(board[row][col-1], Pawn):
+                        if board[row][col-1].can_be_passanted() and board[row][col-1].color == self.opponent:
+                            moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col-1))
+                    pass
 
             # check diagonal right piece
             if row - 1 >= 0 and col+1 < 8:
                 if board[row-1][col+1] != "--":
                     if board[row-1][col+1].color == self.opponent:
                         moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col+1))
+                else:
+                    ## En passant logic
+                    if isinstance(board[row][col+1], Pawn):
+                        if board[row][col+1].can_be_passanted() and board[row][col+1].color == self.opponent:
+                            moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col+1))
+                    pass
         # if piece is black
         else:
             # check diagonal left piece
@@ -178,12 +200,24 @@ class Pawn(Piece):
                 if board[row+1][col-1] != "--":
                     if board[row+1][col-1].color == self.opponent:
                         moves.append(Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col-1))
+                else:
+                    ## En passant logic
+                    if isinstance(board[row][col-1], Pawn):
+                        if board[row][col-1].can_be_passanted() and board[row][col-1].color == self.opponent:
+                            moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col-1))
+                    pass
 
             # check diagonal right piece
             if row+1 <= 8 and col+1 < 8:
                 if board[row+1][col+1] != "--":
                     if board[row+1][col+1].color == self.opponent:
                         moves.append(Move(init_row=row, init_col=col, fin_row=row+1, fin_col=col+1))
+                else:
+                    ## En passant logic
+                    if isinstance(board[row][col+1], Pawn):
+                        if board[row][col+1].can_be_passanted() and board[row][col+1].color == self.opponent:
+                            moves.append(Move(init_row=row, init_col=col, fin_row=row-1, fin_col=col+1))
+                    pass
         return moves
 
 

@@ -70,17 +70,16 @@ while not exit:
         if game.iam_checked():
             if not game.has_valid_moves(game.board, dragger):
                 print("woooo")
+                exit = True
 
         if event.type == p.MOUSEBUTTONDOWN:
             posX, posY = p.mouse.get_pos()
             col, row = game.coord_to_idx(posX, posY)
 
-            # TODO: if I am in check, restrict any moves but moves that put the king out of check
-            if promoting and game.king_in_check(game.current_turn, game.board) == False:
+            if promoting:
                 move_row, move_col = dragger.get_moved_location()
                 promoting = game.promote(move_row=move_row, move_col=move_col,
                                          men_row=row, men_col=col, color=dragger.get_piece().color)
-                # TODO: check if this promotion puts opponent king in check
                 game.finish_turn()
                 continue
             if not dragger.is_dragging:
@@ -92,13 +91,13 @@ while not exit:
                     if isinstance(dragger.get_piece(), Pawn):
                         # check if promotion move
                         if dragger.get_piece().promote_row == row:
-                            print("PROMOTING")
-                            # TODO: check here as well if this move puts current player's king in check
+                            # check here as if this move puts current player's king in check
                             # if so, undrag and continue
                             board_copy = dragger.simulate_drag(
                                 game.board, row, col)
                             if game.king_in_check(dragger.get_piece().color, board_copy):
-                                pass
+                                dragger.undrag()
+                                continue
                             promoting = True
                             game.board = dragger.drag(game.board, row, col)
                             game.draw_promotions(
@@ -111,12 +110,12 @@ while not exit:
                         ##TODO: Here, check if there are any legal moves to get out of check
                         valid_moves = game.has_valid_moves(game.board, dragger)
                         if not valid_moves:
-                            print(f"HOLY! {game.current_turn} WINS!")
+                            print(f"HOLY! {game.current_turn()} WINS!")
                             exit = True
                         dragger.undrag()
                         continue
                     game.board = dragger.drag(game.board, row, col)
-                    # TODO: check if this move we just made puts opponent in check.
+                    # check if this move we just made puts opponent in check.
                     # if so, set opponent king to checked
                     game.king_in_check(dragger.get_piece().opponent, game.board)
                     game.finish_turn()

@@ -153,7 +153,7 @@ class GameState():
         return "black" if self.white_to_move() else "white"
     
     def iam_checked(self) -> bool:
-        if self.current_turn == 'white':
+        if self.current_turn() == 'white':
             if self.white_king_check == True:
                 return True
         else:
@@ -358,6 +358,9 @@ class GameState():
         in_check = self.pawn_danger(board, row, col, opposing_color) or self.right_diagonal(board, row, col, opposing_color) or self.left_diagonal(board, row, col, opposing_color) or self.file_moves(board, row, col, opposing_color) or self.rank_moves(board, row, col, opposing_color) or self.knight_moves(board, row, col, opposing_color)
         if in_check:
             self.set_king_checked(king_chk_color)
+            print("CHECKED")
+            print(f"King being checked: {king_chk_color}")
+            print(f"Should be true: {self.iam_checked()}")
         return in_check
     
     def has_valid_moves(self, board, dragger):
