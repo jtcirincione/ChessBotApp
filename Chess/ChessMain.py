@@ -37,10 +37,13 @@ def loadImages():
     for piece, name in promotion_pieces:
         IMAGES[piece] = p.image.load("images/" + name + ".png")
 
+
 def restart(game, dragger):
     start_time = 0
     game.reset()
     dragger.undrag()
+
+
 p.init()
 canvas = p.display.set_mode((WIDTH, HEIGHT))
 exit = False
@@ -54,13 +57,16 @@ game_over = False
 holding_r = False
 while not exit:
     game.show_bg()
+    if dragger.is_dragging:
+        dragger.illuminate_moves(game.surface, game.board)
+        dragger.update_blit(game.surface)
     game.load(IMAGES)
     if promoting:
         game.draw_promotions(piece=dragger.get_piece(), images=IMAGES)
     # end game if king is check mate'd
     if game_over:
         exit = True
-    ##TODO: If I am checked and cannot escape check, quit (for now)
+    # TODO: If I am checked and cannot escape check, quit (for now)
     # if game.king_in_check(game.current_turn, game.board):
     #     pass
     for event in p.event.get():
@@ -84,7 +90,14 @@ while not exit:
                 continue
             if not dragger.is_dragging:
                 dragger.update_pos(game.board, row, col, game)
+                dragger.update_mouse(p.mouse.get_pos())
             else:
+                pass
+        # Releasing move
+        elif event.type == p.MOUSEBUTTONUP:
+            posX, posY = p.mouse.get_pos()
+            col, row = game.coord_to_idx(posX, posY)
+            if dragger.is_dragging:
                 valid_move = game.is_valid_move(piece=dragger.get_piece(
                 ), board=game.board, init_row=dragger.prevRow, init_col=dragger.prevCol, move_row=row, move_col=col, canvas=game.surface)
                 if valid_move:
@@ -107,7 +120,7 @@ while not exit:
                     # if so, undrag
                     tmp_board = dragger.simulate_drag(game.board, row, col)
                     if game.king_in_check(game.current_turn(), tmp_board):
-                        ##TODO: Here, check if there are any legal moves to get out of check
+                        # TODO: Here, check if there are any legal moves to get out of check
                         valid_moves = game.has_valid_moves(game.board, dragger)
                         if not valid_moves:
                             print(f"HOLY! {game.current_turn()} WINS!")
@@ -117,13 +130,14 @@ while not exit:
                     game.board = dragger.drag(game.board, row, col)
                     # check if this move we just made puts opponent in check.
                     # if so, set opponent king to checked
-                    game.king_in_check(dragger.get_piece().opponent, game.board)
+                    game.king_in_check(
+                        dragger.get_piece().opponent, game.board)
                     game.finish_turn()
                     dragger.undrag()
                 # undo move for invalid
                 else:
                     if game.king_in_check(game.current_turn(), game.board):
-                        ##TODO: Here, check if there are any legal moves to get out of check
+                        # TODO: Here, check if there are any legal moves to get out of check
                         valid_moves = game.has_valid_moves(game.board, dragger)
                         if not valid_moves:
                             exit = True
@@ -131,16 +145,23 @@ while not exit:
                         continue
                     dragger.undrag()
                     continue
-
+        #Dragging motion
+        elif event.type == p.MOUSEMOTION:
+            if dragger.is_dragging:
+                game.show_bg()
+                dragger.illuminate_moves(game.surface, game.board)
+                game.load(IMAGES)
+                dragger.update_mouse(p.mouse.get_pos())
+                dragger.update_blit(game.surface)
+            pass
         elif event.type == p.KEYDOWN:
             if event.key == p.K_r:
                 start_time = p.time.get_ticks()
         elif event.type == p.KEYUP:
             if event.key == p.K_r:
                 if p.time.get_ticks() - start_time >= 2000:
-                        restart(game, dragger)
+                    restart(game, dragger)
                 else:
                     start_time = 0
 
-                
     p.display.update()
