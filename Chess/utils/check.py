@@ -188,11 +188,3 @@ def king_in_check( king_chk_color: str, board: list) -> bool:
         board= board
     in_check = pawn_danger(board, row, col, opposing_color) or right_diagonal(board, row, col, opposing_color) or left_diagonal(board, row, col, opposing_color) or file_moves(board, row, col, opposing_color) or rank_moves(board, row, col, opposing_color) or knight_moves(board, row, col, opposing_color)
     return in_check
-
-
-def simulate_drag_v2(board, prev_row, prev_col, move_row, move_col):
-        tmp_board = copy.deepcopy(board)
-        piece = tmp_board[prev_row][prev_col]
-        tmp_board[prev_row][prev_col] = "--"
-        tmp_board[move_row][move_col] = piece
-        return tmp_board

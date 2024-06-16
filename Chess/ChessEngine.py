@@ -60,6 +60,10 @@ class GameState():
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
                 if self.board[row][col] != "--":
+                    # print(self.board[row][col])
+                    if self.board[row][col] == None:
+                        print(f"indices in board: {row}, {col}")
+                        print(f"board: \n{self.board}")
                     self.surface.blit(
                         images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
 
