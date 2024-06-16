@@ -51,10 +51,12 @@ def loadImages():
         IMAGES[piece] = p.image.load(dir)
 
 
-def restart(game, dragger):
+def restart(game, dragger, robot=None):
     start_time = 0
     game.reset()
     dragger.undrag()
+    if robot:
+        robot.reset()
 
 
 p.init()
@@ -96,6 +98,8 @@ while not exit:
         robot.choosing = True
         bcopy = copy.deepcopy(game.board)
         move, _ = robot.minimax(game.board, True, 2)
+        if not move:
+            print("GGILOSE")
         strtr, strtc = move.get_initial()
         finr, finc = move.get_final()
         # print(f"start idx: {strtr}, {strtc}")
@@ -209,7 +213,10 @@ while not exit:
         elif event.type == p.KEYUP:
             if event.key == p.K_r:
                 if p.time.get_ticks() - start_time >= 2000:
-                    restart(game, dragger)
+                    if use_ai:
+                        restart(game, dragger, robot)
+                    else:
+                        restart(game, dragger)
                 else:
                     start_time = 0
             if event.key == p.K_i:

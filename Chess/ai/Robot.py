@@ -23,6 +23,10 @@ class Robot:
         self.nodes_visited = 0
         self.choosing = False
 
+    def reset(self):
+        self.nodes_visited = 0
+        self.choosing = False
+
     def get_all_moves(self, board: list[list[Piece]], color):
         moves = []
         for row in range(8):
