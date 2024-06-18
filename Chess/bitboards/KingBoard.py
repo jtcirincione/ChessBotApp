@@ -22,8 +22,8 @@ class KingBoard(BitBoard):
         mask = 0xFFFFFFFFFFFFFFFF
         for move in self.moves:
             if move > 0:
-                potential_move = (self.board >> move) & FILE_A_MASK  ## right moves
+                potential_move = (self.board >> move) & FILE_A_MASK  ## right shift moves
             else:
-                potential_move = (self.board << -move) & FILE_H_MASK  ## left moves
+                potential_move = (self.board << -move) & FILE_H_MASK  ## left shift moves
             valid_moves |= potential_move
         return valid_moves
