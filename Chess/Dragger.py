@@ -1,5 +1,6 @@
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 from ChessEngine import GameState
+from bitboards.BitBoard import BitBoard
 import copy
 import pygame
 WIDTH = HEIGHT = 512
@@ -10,6 +11,7 @@ SQ_SIZE = HEIGHT // DIMENSION
 class Dragger:
     def __init__(self):
         self.prevRow = self.prevCol = self.postRow = self.postCol = 0
+        self.oldIdx = 0
         self.piece: Piece = None
         self.is_dragging = False
         self.mouseX = -100
@@ -23,6 +25,7 @@ class Dragger:
         self.piece = board[x][y]
         self.prevRow = x
         self.prevCol = y
+        self.oldIdx = self.prevRow * 8 + self.prevCol
         self.is_dragging = True
 
     def update_mouse(self, pos) -> None:
@@ -56,6 +59,10 @@ class Dragger:
             rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
             color = (255,255,102)
             pygame.draw.rect(surface=surface, color=color, rect=rect)
+
+
+    def drag2(self, bitboard: BitBoard, newIdx):
+        bitboard.move_piece(self.oldIdx, newIdx)
 
     def drag(self, board: list[list[Piece]], x: int, y: int) -> list:
         print("I AM MOVING ONCE")
@@ -169,6 +176,7 @@ class Dragger:
     def undrag(self):
         self.is_dragging = False
         self.prevRow = self.prevCol = self.postRow = self.postCol = 0
+        self.oldIdx = 0
         self.piece = None
         self.mouseX = 0
         self.mouseY = 0

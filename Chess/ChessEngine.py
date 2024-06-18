@@ -4,6 +4,12 @@ Responsible for storing all info about the current state of a chess game and val
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 from Move import Move
 import pygame, utils.check as check
+from bitboards.BishopBoard import BishopBoard
+from bitboards.KingBoard import KingBoard
+from bitboards.KnightBoard import KnightBoard
+from bitboards.PawnBoard import PawnBoard
+from bitboards.RookBoard import RookBoard
+from bitboards.QueenBoard import QueenBoard
 WIDTH = HEIGHT = 512
 # Dimensions of the board
 DIMENSION = ROWS = COLS = 8
@@ -28,6 +34,37 @@ class GameState():
             [Rook("wR", "white"), Knight("wN", "white"), Bishop("wB", "white"), Queen("wQ", "white"), King(
                 "wK", "white"), Bishop("wB", "white"), Knight("wN", "white"), Rook("wR", "white")]
         ]
+
+        self.white_pawn_board = PawnBoard("white")
+        self.white_rook_board = RookBoard("white")
+        self.white_queen_board = QueenBoard("white")
+        self.white_bishop_board = BishopBoard("white")
+        self.white_knight_board = KnightBoard("white")
+        self.white_king_board = KingBoard("white")
+        
+        self.black_pawn_board = PawnBoard("black")
+        self.black_rook_board = RookBoard("black")
+        self.black_queen_board = QueenBoard("black")
+        self.black_bishop_board = BishopBoard("black")
+        self.black_knight_board = KnightBoard("black")
+        self.black_king_board = KingBoard("black")
+
+        self.boards = {
+            "wp": PawnBoard("white"),
+            "wR": RookBoard("white"),
+            "wQ": QueenBoard("white"),
+            "wB": BishopBoard("white"),
+            "wN": KnightBoard("white"),
+            "wK": KingBoard("white"),
+            
+            "bp": PawnBoard("black"),
+            "bR": RookBoard("black"),
+            "bQ": QueenBoard("black"),
+            "bB": BishopBoard("black"),
+            "bN": KnightBoard("black"),
+            "bK": KingBoard("black"),
+        }
+        
         self.whiteToMove: bool = True
         self.moveLog: list = []
         self.black_king_check = False
@@ -56,16 +93,80 @@ class GameState():
                 rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 pygame.draw.rect(self.surface, color, rect)
 
+    # def load(self, images: dict) -> None:
+    #     for row in range(len(self.board)):
+    #         for col in range(len(self.board[row])):
+    #             if self.board[row][col] != "--":
+    #                 # print(self.board[row][col])
+    #                 if self.board[row][col] == None:
+    #                     print(f"indices in board: {row}, {col}")
+    #                     print(f"board: \n{self.board}")
+    #                 self.surface.blit(
+    #                     images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
+    
+
     def load(self, images: dict) -> None:
-        for row in range(len(self.board)):
-            for col in range(len(self.board[row])):
-                if self.board[row][col] != "--":
-                    # print(self.board[row][col])
-                    if self.board[row][col] == None:
-                        print(f"indices in board: {row}, {col}")
-                        print(f"board: \n{self.board}")
-                    self.surface.blit(
-                        images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
+        for rank in range(8):
+            for file in range(8):
+                square = rank * 8 + file
+                for key, board in self.boards.items():
+                    if board.get_bit(square) == 1:
+                        self.surface.blit(images[key], (file * SQ_SIZE, rank * SQ_SIZE))
+                # if self.black_bishop_board.get_bit(square) == 1:
+                #     self.surface.blit(
+                #         images['bB'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.black_pawn_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['bp'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.black_rook_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['bR'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.black_knight_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['bN'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.black_queen_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['bQ'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.black_king_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['bK'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_bishop_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['wB'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_pawn_board.get_bit(square) == 1:
+                #     self.surface.blit(
+                #         images['wp'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_rook_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['wR'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_knight_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['wN'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_queen_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['wQ'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+                # if self.white_king_board.get_bit(square):
+                #     self.surface.blit(
+                #         images['wK'], (file * SQ_SIZE, rank * SQ_SIZE)
+                #     )
+    
+    def get_proper_board(self, idx):
+        for board in self.boards.values():
+            if board.get_bit(idx) == 1:
+                return board
+            
+        raise Exception(f"No board found with a piece at index {idx}")
 
     def reset(self):
         self.board = [

@@ -9,6 +9,8 @@ from Piece import Pawn
 import yaml
 import copy, os
 from ai.Robot import Robot
+from bitboards.PawnBoard import PawnBoard
+from bitboards.BitBoard import BitBoard
 
 # Size of board
 WIDTH = HEIGHT = 512
@@ -72,6 +74,15 @@ game_over = False
 holding_r = False
 ai_color = 'black'
 illuminate_white = illuminate_black = False
+
+
+# white_pawn_board = PawnBoard("white")
+black_pawn_board = PawnBoard("black")
+
+print(f"Black pawn board: \n")
+black_pawn_board.print_board()
+
+
 while not exit:
     game.show_bg()
     if dragger.is_dragging:
@@ -174,6 +185,9 @@ while not exit:
                         dragger.undrag()
                         continue
                     game.board = dragger.drag(game.board, row, col)
+                    new_idx = row * 8 + col
+                    old_idx = dragger.oldIdx
+                    dragger.drag2(game.get_proper_board(old_idx), new_idx)
                     # check if this move we just made puts opponent in check.
                     # if so, set opponent king to checked
                     game.king_in_check(

@@ -51,12 +51,12 @@ class Robot:
         return None
     
     def is_terminal(self, board, color) -> bool:
-        king, row, col = self.find_king(board, color)
-        if check.king_in_check(color, board) and not self.get_all_moves(board, color):
+        # king, row, col = self.find_king(board, color)
+        if not self.get_all_moves(board, color):
             return True
         opp_color = self.opposite_color(color)
-        king, row, col = self.find_king(board, opp_color)
-        if check.king_in_check(opp_color, board) and not self.get_all_moves(board, opp_color):
+        # king, row, col = self.find_king(board, opp_color)
+        if not self.get_all_moves(board, opp_color):
             return True
         return False
 
@@ -84,20 +84,27 @@ class Robot:
     def winning(self, board, color) -> int:
         opponent_color = self.opposite_color(color)
         score = 0
-        for row in range(8):
-            for col in range(8):
-                piece = board[row][col]
-                if piece != "--":
-                    ##FIXME: Shouldn't ever need to do color check because we should never be able to make a move that puts ourself in checkmate
-                    if isinstance(piece, King):
-                        valid_moves = piece.valid_moves(board, row, col)
-                        if valid_moves == 0 and check.king_in_check(color, board):
-                            print("I HAVE BEEN MATED")
-                            return 10000 if color == piece.color else -10000
+        # for row in range(8):
+        #     for col in range(8):
+        #         piece = board[row][col]
+        #         if piece != "--":
+        #             ##FIXME: Shouldn't ever need to do color check because we should never be able to make a move that puts ourself in checkmate
+        #             if isinstance(piece, King):
+        #                 valid_moves = piece.valid_moves(board, row, col)
+        #                 if valid_moves == 0 and check.king_in_check(color, board):
+        #                     print("I HAVE BEEN MATED")
+        #                     return 10000 if piece.color == "white" else -10000
+        if not self.get_all_moves(board, "black"):
+            return -10000
+        if not self.get_all_moves(board, "white"):
+            return 10000
+        
         ## if this move puts the opponent in check
-        if check.king_in_check(opponent_color, board):
+        if check.king_in_check("white", board):
             print("I SHOULD USE THIS MOVE")
             score += 100
+        elif check.king_in_check("black", board):
+            score -= 100
         return score
         
 
