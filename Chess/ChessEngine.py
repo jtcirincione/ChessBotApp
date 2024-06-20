@@ -82,6 +82,14 @@ class GameState():
         y = posY // SQ_SIZE
         # print(posX, posY)
         return (x, y)
+    
+    def get_w_board(self):
+        w_board = self.boards["wp"] | self.boards["wR"] | self.boards["wB"] | self.boards["wN"] | self.boards["wK"] | self.boards["wQ"]
+        return w_board
+    
+    def get_b_board(self):
+        b_board = self.boards["bp"] | self.boards["bR"] | self.boards["bB"] | self.boards["bN"] | self.boards["bK"] | self.boards["bQ"]
+        return b_board
 
     def show_bg(self):
         for row in range(ROWS):
@@ -104,6 +112,12 @@ class GameState():
     #                 self.surface.blit(
     #                     images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
     
+    ## returns the bitboard type of piece at given index: idx
+    def get_pieces_board(self, idx):
+        for board in self.boards.values():
+            if board.get_bit(idx) == 1:
+                return board
+        return None
 
     def load(self, images: dict) -> None:
         for rank in range(8):
