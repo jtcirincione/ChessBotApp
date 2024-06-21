@@ -8,7 +8,7 @@ from bitboards.KingBoard import KingBoard
 from bitboards.QueenBoard import QueenBoard
 from bitboards.KnightBoard import KnightBoard
 import copy
-import pygame
+import pygame, numpy as np
 WIDTH = HEIGHT = 512
 # Dimensions of the board
 DIMENSION = ROWS = COLS = 8
@@ -40,82 +40,43 @@ class Dragger2:
         img_center = (self.mouseX, self.mouseY)
         surface.blit(img, img.get_rect(center=img_center))
 
-    def illuminate_moves(self, surface, board) -> None:
-        moves = self.piece_board.attacking_squares(self.oldIdx).get_idxs()
+    def illuminate_moves(self, surface, black_board, white_board) -> None:
+        moves = self.piece_board.attacking_squares(self.oldIdx, black_board, white_board)
 
-        for row, col in moves:
-            rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-            color = (255,255,102)
-            pygame.draw.rect(surface=surface, color=color, rect=rect)
+        for row in range(8):
+            for col in range(8):
+                idx = row * 8 + col
+                if BitBoard.get_bit_on_board(idx, moves) == 1:
+                    rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+                    color = (255,255,102)
+                    pygame.draw.rect(surface=surface, color=color, rect=rect)
 
     def illuminate_all_moves(self, surface, boards: list[BitBoard], color):
-        moves = []
+        moves = np.uint64(0)
         for i in range(8):
             for j in range(8):
-                idx = i * 8 + j
+                idx = np.uint64(i * 8 + j)
                 for board in boards:
                     if board.get_bit(idx):
                         if board.color == color:
-                            moves.extend(board.attacking_squares(idx).get_idxs())
+                            moves |= board.attacking_squares(idx)
         print(f"I, {color}, have {len(moves)} valid moves.")
-        for row, col in moves:
-            rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-            color = (255,255,102)
-            pygame.draw.rect(surface=surface, color=color, rect=rect)
+        for row in range(8):
+            for col in range(8):
+                idx = np.uint64(row * 8 + col)
+                if BitBoard.get_bit_on_board(idx, moves):
+                    rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+                    color = (255,255,102)
+                    pygame.draw.rect(surface=surface, color=color, rect=rect)
 
 
-    def drag2(self, bitboard: BitBoard, newIdx):
+    def drag2(self, bitboard: BitBoard, newIdx, board_to_clear: BitBoard=np.uint64(0)):
         bitboard.move_piece(self.oldIdx, newIdx)
         self.oldIdx = newIdx
         self.is_dragging = False
-        if isinstance(bitboard, PawnBoard):
-            pass
-
-    def drag(self, board: list[list[Piece]], x: int, y: int) -> list:
-        print("I AM MOVING ONCE")
-        self.postRow = x
-        self.postCol = y
-        self.is_dragging = False
-        # if pawn, set moved to true
-        if isinstance(self.piece, Pawn):
-            self.piece.moved()
-            # TODO: Refactor elsewhere
-            # If pawn moved 2 spots, set en passant to true
-            if abs(self.postRow - self.prevRow) == 2:
-                self.piece.set_passant_active()
-            else:
-                self.piece.set_passant_inactive()
-            # TODO: Now check if we are moving diagonally to an empty square.
-            # if we are, remove the piece ether behind or in front of the move location
-            # depending on current piece's color
-            if board[self.postRow][self.postCol] == "--" and abs(self.postRow - self.prevRow) == 1 and abs(self.postCol - self.prevCol) == 1:
-                print('EN PASSANTED2')
-                if self.piece.color == "white":
-                    board[self.postRow + 1][self.postCol] = "--"
-                else:
-                    board[self.postRow - 1][self.postCol] = "--"
-        ## CASTLING LOGIC
-        if isinstance(self.piece, King):
-            print(";LKDSAFJ;SALKFJSA;LKFJSALKFJSDLKFAJSF;LSAKDJF")
-            self.piece.has_moved = True
-            if abs(self.postCol - self.prevCol == 2):
-                ## if castling left
-                if self.prevCol - self.postCol > 0:
-                    ## move rook one space to the right of moved king
-                    rook = board[self.postRow][0]
-                    board[self.postRow][0] = "--"
-                    board[self.postRow][self.postCol+1] = rook
-                    rook.has_moved = True
-                ## castling right
-                else:
-                    ## move rook one space to the left of moved king
-                    rook = board[self.postRow][7]
-                    board[self.postRow][7] = "--"
-                    board[self.postRow][self.postCol-1] = rook
-                    rook.has_moved = True
-        board[self.prevRow][self.prevCol] = "--"
-        board[self.postRow][self.postCol] = self.piece
-        return board
+        if board_to_clear:
+            board_to_clear.clear_bit(newIdx)
+        
 
     
     def simulate_drag(self, board: list, x: int, y: int) -> list:

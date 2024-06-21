@@ -36,16 +36,16 @@ class KingBoard(BitBoard):
             valid_moves |= potential_move
         return valid_moves
     
-    def attacking_squares(self, pieceIdx, enemy_board:np.uint64, my_color_board:np.uint64) -> np.uint64:
+    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
         board = self.get_single_piece_board(self.board, pieceIdx)
         ## if king is moving to the right, apply A mask
         # Vice versa for left
-        valid_moves = np.uint64(0x0000000000000000)
+        valid_moves = np.uint64(0)
         for move in self.moves:
             if move > 0:
-                potential_move = (board << move)
+                potential_move = (board << np.uint64(move))
             else:
-                potential_move = (board >> -move)
+                potential_move = (board >> np.uint64(-move))
 
             if move == -1 or move == -9 or move == 7: ## if piece is moving to the right
                 potential_move &= FILE_A_MASK
@@ -53,4 +53,4 @@ class KingBoard(BitBoard):
                 potential_move &= FILE_H_MASK
 
             valid_moves |= potential_move
-        return valid_moves
+        return valid_moves & ~my_color_board

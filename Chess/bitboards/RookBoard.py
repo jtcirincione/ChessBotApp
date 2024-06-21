@@ -1,5 +1,5 @@
 from bitboards.BitBoard import BitBoard
-import numpy as np
+import numpy as np, warnings
 FILE_H_MASK = np.uint64(0b1000000010000000100000001000000010000000100000001000000010000000)
 RANK_8_MASK = np.uint64(0b1111111100000000000000000000000000000000000000000000000000000000)
 RANK_1_MASK = np.uint64(0b0000000000000000000000000000000000000000000000000000000011111111)
@@ -31,11 +31,20 @@ class RookBoard(BitBoard):
 
     def h_v_moves(self, idx, occupied: np.uint64):
         s = self.get_single_piece_board(self.board, idx)
+        # s = np.uint64(1 << idx)
+        print("binary:")
+        print(bin(s))
+        print("flipped:")
+        print(bin(self.reverse_bits(s) | s))
         occ_h = occupied & self.rank_masks[idx//8]
         occ_v = occupied & self.file_masks[idx%8]
-        horizontal = (occ_h - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_h) - self.reverse_bits(np.uint64(2) * s))
-        vertical = (occ_v - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_v) - self.reverse_bits(np.uint64(2) * s))
-        return (horizontal | vertical)
+        # with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        horizontal = (occ_h - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_h) - np.uint64(2) * self.reverse_bits(s))
+        vertical = (occ_v - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_v) - np.uint64(2) * self.reverse_bits(s))
+        print("horiz squares:")
+        BitBoard.print_board_2(horizontal)
+        return ((horizontal & self.rank_masks[idx//8]) | (vertical & self.file_masks[idx%8]))
 
     # mask all ranks above/below rook for horizontal moves
     # mask out files to left/right of rook for vertical moves
@@ -44,6 +53,5 @@ class RookBoard(BitBoard):
         valid_moves = 0
         return valid_moves
     
-    def attacking_squares(self, pieceIdx, enemy_board:np.uint64, my_color_board:np.uint64) -> np.uint64:
-        board = self.get_single_piece_board(self.board, pieceIdx)
-        return self.h_v_moves(pieceIdx, enemy_board | my_color_board)
+    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
+        return self.h_v_moves(pieceIdx, enemy_board | my_color_board) & ~my_color_board

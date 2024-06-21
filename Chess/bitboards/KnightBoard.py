@@ -9,7 +9,7 @@ FILE_H_MASK = np.uint64(0b111111101111111011111110111111101111111011111110111111
 class KnightBoard(BitBoard):
     def __init__(self, color):
         board = self.initialize_board(color)
-        name = "bB" if color == "black" else "wB"
+        name = "bN" if color == "black" else "wN"
         super().__init__(color, board, name)
         self.moves = [
             6, ## top right move restrict from A and B
@@ -59,9 +59,9 @@ class KnightBoard(BitBoard):
         valid_moves = np.uint64(0x0000000000000000)
         for move in self.moves:
             if move > 0:
-               position = (board << move)
+               position = (board << np.uint64(move))
             else:
-               position = (board >> -move)
+               position = (board >> np.uint64(-move))
             if move == 6 or move == -10:
                 position &= FILE_AB_MASK
             if move == 15 or move == -17:
@@ -71,5 +71,4 @@ class KnightBoard(BitBoard):
             if move == -15 or move == 17:
                 position &= FILE_H_MASK
         valid_moves |= position
-        valid_moves &= ~my_color_board.board
         return valid_moves

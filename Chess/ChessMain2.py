@@ -86,22 +86,20 @@ black_pawn_board.print_board()
 while not exit:
     game.show_bg()
     if dragger.is_dragging:
-        dragger.illuminate_moves(game.surface, game.board)
+        # print(type(dragger.piece_board))
+        dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board())
         dragger.update_blit(game.surface)
     game.load(IMAGES)
-    if promoting:
-        game.draw_promotions(piece=dragger.get_piece(), images=IMAGES)
+    # if promoting:
+    #     game.draw_promotions(piece=dragger.get_piece(), images=IMAGES)
     # end game if king is check mate'd
     if game_over:
         exit = True
-    # TODO: If I am checked and cannot escape check, quit (for now)
-    # if game.king_in_check(game.current_turn, game.board):
-    #     pass
 
-    if illuminate_white:
-        dragger.illuminate_all_moves(canvas, game.board, "white")
-    if illuminate_black:
-        dragger.illuminate_all_moves(canvas, game.board, "black")
+    # if illuminate_white:
+    #     dragger.illuminate_all_moves(canvas, game.board, "white")
+    # if illuminate_black:
+    #     dragger.illuminate_all_moves(canvas, game.board, "black")
 
     # Robot logic
     if use_ai and game.current_turn() == robot.color and robot.choosing == False:
@@ -137,16 +135,17 @@ while not exit:
             posX, posY = p.mouse.get_pos()
             col, row = game.coord_to_idx(posX, posY)
 
-            if promoting:
-                move_row, move_col = dragger.get_moved_location()
-                promoting = game.promote(move_row=move_row, move_col=move_col,
-                                         men_row=row, men_col=col, color=dragger.get_piece().color)
-                if use_ai:
-                    robot.choosing = False
-                game.finish_turn()
-                continue
+            # if promoting:
+            #     move_row, move_col = dragger.get_moved_location()
+            #     promoting = game.promote(move_row=move_row, move_col=move_col,
+            #                              men_row=row, men_col=col, color=dragger.get_piece().color)
+            #     if use_ai:
+            #         robot.choosing = False
+            #     game.finish_turn()
+            #     continue
             if not dragger.is_dragging:
-                dragger.update_pos(game.board, row, col, game)
+                board = game.get_proper_board(row * 8 + col)
+                dragger.update_pos(board, row*8+col, game)
                 dragger.update_mouse(p.mouse.get_pos())
             else:
                 pass
@@ -154,65 +153,27 @@ while not exit:
         elif event.type == p.MOUSEBUTTONUP:
             posX, posY = p.mouse.get_pos()
             col, row = game.coord_to_idx(posX, posY)
+            new_idx = row * 8 + col
             if dragger.is_dragging:
-                valid_move = game.is_valid_move(piece=dragger.get_piece(
-                ), board=game.board, init_row=dragger.prevRow, init_col=dragger.prevCol, move_row=row, move_col=col, canvas=game.surface)
+                valid_move = game.is_valid_move(dragger.oldIdx, row * 8 + col)
                 if valid_move:
-                    if isinstance(dragger.get_piece(), Pawn):
-                        # check if promotion move
-                        if dragger.get_piece().promote_row == row:
-                            # check here as if this move puts current player's king in check
-                            # if so, undrag and continue
-                            board_copy = dragger.simulate_drag(
-                                game.board, row, col)
-                            if game.king_in_check(dragger.get_piece().color, board_copy):
-                                dragger.undrag()
-                                continue
-                            promoting = True
-                            game.board = dragger.drag(game.board, row, col)
-                            game.draw_promotions(
-                                piece=dragger.get_piece(), images=IMAGES)
-                            continue
-                    # check if this move puts current player's king in check
-                    # if so, undrag
-                    tmp_board = dragger.simulate_drag(game.board, row, col)
-                    if game.king_in_check(game.current_turn(), tmp_board):
-                        # Here, check if there are any legal moves to get out of check
-                        valid_moves = game.has_valid_moves(game.board, dragger)
-                        if not valid_moves:
-                            print(f"HOLY! {game.current_turn()} WINS!")
-                            exit = True
-                        dragger.undrag()
-                        continue
-                    game.board = dragger.drag(game.board, row, col)
-                    new_idx = row * 8 + col
-                    old_idx = dragger.oldIdx
-                    dragger.drag2(game.get_proper_board(old_idx), new_idx)
-                    # check if this move we just made puts opponent in check.
-                    # if so, set opponent king to checked
-                    game.king_in_check(
-                        dragger.get_piece().opponent, game.board)
                     game.finish_turn()
                     if use_ai:
                         robot.choosing = False
+                    old_idx = dragger.oldIdx
+                    dragger.drag2(game.get_proper_board(old_idx), new_idx)
                     dragger.undrag()
                 # undo move for invalid
                 else:
-                    if game.king_in_check(game.current_turn(), game.board):
-                        # TODO: Here, check if there are any legal moves to get out of check
-                        valid_moves = game.has_valid_moves(game.board, dragger)
-                        if not valid_moves:
-                            exit = True
-                        dragger.undrag()
-                        continue
                     dragger.undrag()
                     continue
         # Dragging motion
         elif event.type == p.MOUSEMOTION:
             if dragger.is_dragging:
                 game.show_bg()
-                dragger.illuminate_moves(game.surface, game.board)
+                dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board())
                 game.load(IMAGES)
+                dragger.piece_board.print_board()
                 dragger.update_mouse(p.mouse.get_pos())
                 dragger.update_blit(game.surface)
             pass

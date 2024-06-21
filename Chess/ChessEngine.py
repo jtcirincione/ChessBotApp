@@ -1,9 +1,11 @@
 """
 Responsible for storing all info about the current state of a chess game and validates moves. Keeps a move log.
 """
+import numpy as np
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 from Move import Move
 import pygame, utils.check as check
+from bitboards.BitBoard import BitBoard
 from bitboards.BishopBoard import BishopBoard
 from bitboards.KingBoard import KingBoard
 from bitboards.KnightBoard import KnightBoard
@@ -49,7 +51,7 @@ class GameState():
         self.black_knight_board = KnightBoard("black")
         self.black_king_board = KingBoard("black")
 
-        self.boards = {
+        self.boards: dict[str, BitBoard]= {
             "wp": PawnBoard("white"),
             "wR": RookBoard("white"),
             "wQ": QueenBoard("white"),
@@ -84,12 +86,18 @@ class GameState():
         return (x, y)
     
     def get_w_board(self):
-        w_board = self.boards["wp"] | self.boards["wR"] | self.boards["wB"] | self.boards["wN"] | self.boards["wK"] | self.boards["wQ"]
+        w_board = self.boards["wp"].board | self.boards["wR"].board | self.boards["wB"].board | self.boards["wN"].board | self.boards["wK"].board | self.boards["wQ"].board
         return w_board
     
     def get_b_board(self):
-        b_board = self.boards["bp"] | self.boards["bR"] | self.boards["bB"] | self.boards["bN"] | self.boards["bK"] | self.boards["bQ"]
+        b_board = self.boards["bp"].board | self.boards["bR"].board | self.boards["bB"].board | self.boards["bN"].board | self.boards["bK"].board | self.boards["bQ"].board
         return b_board
+    
+    def get_opponent_board(self):
+        return self.get_b_board() if self.current_turn() == "white" else self.get_w_board()
+
+    def get_current_player_board(self):
+        return self.get_w_board() if self.current_turn() == "white" else self.get_b_board()
 
     def show_bg(self):
         for row in range(ROWS):
@@ -207,12 +215,15 @@ class GameState():
     #   # surface.blit(images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
     #   pass
 
-    def is_valid_move(self, piece: Piece, board: list, init_row: int, init_col: int, move_row: int, move_col: int, canvas) -> bool:
-        moves:list[Move] = piece.valid_moves(board=board, row=init_row, col=init_col)
-        for move in moves:
-            if (move_row, move_col) == move.get_final():
-                return True
+
+    # out of all of the valid moves, check if idx is on a set bit
+    def is_valid_move(self, old_idx: int, new_idx: int) -> bool:
+        for board in self.boards.values():
+           if board.get_bit(old_idx) == 1:
+               ## then we are looking at proper board
+               return BitBoard.get_bit_on_board(new_idx, board.attacking_squares(old_idx, np.uint64(0), np.uint64(0)))
         return False
+            
 
     def draw_promotions(self, piece: Piece, images: dict) -> None:
         if not isinstance(piece, Pawn):
