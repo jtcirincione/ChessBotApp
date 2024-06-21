@@ -76,9 +76,9 @@ class Dragger2:
             bitboard.move_piece(self.oldIdx, newIdx)
             self.oldIdx = newIdx
             dragged = True
+            if board_to_clear:
+                board_to_clear.clear_bit(newIdx)
         self.is_dragging = False
-        if board_to_clear:
-            board_to_clear.clear_bit(newIdx)
         return dragged
 
     
