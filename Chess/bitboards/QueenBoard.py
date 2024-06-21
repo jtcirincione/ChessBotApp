@@ -16,8 +16,6 @@ class QueenBoard(BitBoard):
 
     def h_v_moves(self, idx, occupied: np.uint64):
         s = self.get_single_piece_board(self.board, idx)
-        print("binary:")
-        print(bin(s))
         # s = np.uint64(1 << idx)
         occ_h = occupied & self.rank_masks[idx//8]
         occ_v = occupied & self.file_masks[idx%8]
@@ -30,8 +28,6 @@ class QueenBoard(BitBoard):
     def d_anti_moves(self, idx, occupied: np.uint64):
         s = self.get_single_piece_board(self.board, idx)
         # s = np.uint64(1 << idx)
-        print("occupied pieces")
-        BitBoard.print_board_2(occupied)
         occ_d = occupied & self.diagonal_masks[(idx//8) + (idx%8)]
         occ_a = occupied & self.antidiagonal_masks[(idx//8) + 7 - (idx%8)]
         with warnings.catch_warnings():

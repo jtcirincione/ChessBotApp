@@ -32,18 +32,12 @@ class RookBoard(BitBoard):
     def h_v_moves(self, idx, occupied: np.uint64):
         s = self.get_single_piece_board(self.board, idx)
         # s = np.uint64(1 << idx)
-        print("binary:")
-        print(bin(s))
-        print("flipped:")
-        print(bin(self.reverse_bits(s) | s))
         occ_h = occupied & self.rank_masks[idx//8]
         occ_v = occupied & self.file_masks[idx%8]
         # with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         horizontal = (occ_h - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_h) - np.uint64(2) * self.reverse_bits(s))
         vertical = (occ_v - (np.uint64(2) * s)) ^ self.reverse_bits(self.reverse_bits(occ_v) - np.uint64(2) * self.reverse_bits(s))
-        print("horiz squares:")
-        BitBoard.print_board_2(horizontal)
         return ((horizontal & self.rank_masks[idx//8]) | (vertical & self.file_masks[idx%8]))
 
     # mask all ranks above/below rook for horizontal moves

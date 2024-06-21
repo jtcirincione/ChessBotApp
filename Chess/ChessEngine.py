@@ -188,7 +188,7 @@ class GameState():
             if board.get_bit(idx) == 1:
                 return board
             
-        raise Exception(f"No board found with a piece at index {idx}")
+        return np.uint64(0)
 
     def reset(self):
         self.board = [

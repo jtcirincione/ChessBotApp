@@ -67,7 +67,7 @@ exit = False
 
 loadImages()
 game = ChessEngine.GameState(canvas)
-dragger = Dragger2()
+dragger: Dragger2 = Dragger2()
 start_time = float("inf")
 promoting = False
 game_over = False
@@ -76,11 +76,6 @@ ai_color = 'black'
 illuminate_white = illuminate_black = False
 
 
-# white_pawn_board = PawnBoard("white")
-black_pawn_board = PawnBoard("black")
-
-print(f"Black pawn board: \n")
-black_pawn_board.print_board()
 
 
 while not exit:
@@ -155,25 +150,21 @@ while not exit:
             col, row = game.coord_to_idx(posX, posY)
             new_idx = row * 8 + col
             if dragger.is_dragging:
-                valid_move = game.is_valid_move(dragger.oldIdx, row * 8 + col)
-                if valid_move:
-                    game.finish_turn()
-                    if use_ai:
-                        robot.choosing = False
-                    old_idx = dragger.oldIdx
-                    dragger.drag2(game.get_proper_board(old_idx), new_idx)
-                    dragger.undrag()
-                # undo move for invalid
-                else:
-                    dragger.undrag()
+                if use_ai:
+                    robot.choosing = False
+                old_idx = dragger.oldIdx
+                dragged = dragger.drag2(game.get_proper_board(old_idx), new_idx, game.get_current_player_board(), game.get_opponent_board(), game.get_proper_board(new_idx))
+                dragger.undrag()
+                if not dragged:
                     continue
+                game.finish_turn()
+                # undo move for invalid
         # Dragging motion
         elif event.type == p.MOUSEMOTION:
             if dragger.is_dragging:
                 game.show_bg()
                 dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board())
                 game.load(IMAGES)
-                dragger.piece_board.print_board()
                 dragger.update_mouse(p.mouse.get_pos())
                 dragger.update_blit(game.surface)
             pass

@@ -37,14 +37,35 @@ class PawnBoard(BitBoard):
             move_board = one_move | two_moves
         return move_board
     
-    def attacking_squares(self, pieceIdx:int, enemy_board:np.uint64, my_color_board:np.uint64) -> np.uint64:
+
+    def get_left_attacks(self, board, enemy_board):
+        if self.color == "white":
+            attacks = (board << np.uint64(9)) & FILE_A_MASK
+        else:
+            attacks = (board >> np.uint64(7)) & FILE_H_MASK
+        return attacks & enemy_board
+            
+
+    def get_right_attacks(self, board, enemy_board):
+        if self.color == "white":
+            attacks = (board << np.uint64(7)) & FILE_A_MASK
+        else:
+            attacks = (board >> np.uint64(9)) & FILE_H_MASK
+        return attacks & enemy_board
+
+    def get_attacking_board(self, board, enemy_board: np.uint64):
+        return self.get_left_attacks(board, enemy_board) | self.get_right_attacks(board, enemy_board)
+
+
+    def attacking_squares(self, pieceIdx:int, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
         board = self.get_single_piece_board(self.board, pieceIdx)
         if self.color == "white":
-            two_moves = np.uint64(WHITE_2MOVE_ROW & (board << np.uint64(16)))
-            one_move = np.uint64(board << np.uint64(8))
+            one_move = np.uint64(board << np.uint64(8)) & ~my_color_board
+            two_moves = np.uint64(WHITE_2MOVE_ROW & (one_move << np.uint64(8))) & ~my_color_board
             move_board = np.uint64(one_move | two_moves)
         if self.color == "black":
-            two_moves = np.uint64(BLACK_2MOVE_ROW & (board >> np.uint64(16)))
             one_move = board >> np.uint64(8)
+            two_moves = np.uint64(BLACK_2MOVE_ROW & (one_move >> np.uint64(8)))
             move_board = one_move | two_moves
-        return move_board
+        move_board |= self.get_attacking_board(board, enemy_board)
+        return move_board & ~my_color_board

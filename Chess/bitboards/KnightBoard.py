@@ -63,7 +63,6 @@ class KnightBoard(BitBoard):
         return valid_moves
 
     def attacking_squares(self, pieceIdx, my_color_board: np.uint64, enemy_board: np.uint64) -> np.uint64:
-        print("AB File mask:")
         board = self.get_single_piece_board(self.board, pieceIdx)
         valid_moves = np.uint64(0)
         for move in self.moves:
