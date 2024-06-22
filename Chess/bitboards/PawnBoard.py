@@ -9,6 +9,8 @@ BLACK_PASSANT_ROW = np.uint64(0b000000000000000011111111000000000000000000000000
 WHITE_PASSANT_ROW = np.uint64(0b0000000000000000000000000000000000000000111111110000000000000000)
 FILE_H_MASK = np.uint64(0b1111111011111110111111101111111011111110111111101111111011111110)
 FILE_A_MASK = np.uint64(0b0111111101111111011111110111111101111111011111110111111101111111)
+WHITE_PROMOTE_MASK = np.uint64(0xFF00000000000000)
+BLACK_PROMOTE_MASK = np.uint64(0xFF)
 
 class PawnBoard(BitBoard):
     def __init__(self, color):
@@ -90,10 +92,16 @@ class PawnBoard(BitBoard):
             move_board = one_move | two_moves
         # one_move
         attack_board = self.get_attacking_board(board, enemy_board) & ~my_color_board
-        moves.extend(BitBoard.get_moves(self.board, one_move, pieceIdx))
-        moves.extend(BitBoard.get_moves(self.board, two_moves, pieceIdx, MoveType.EN_PASSANT))
-        moves.extend(BitBoard.get_moves(self.board, attack_board & ~en_passant_board, pieceIdx))
+        moves.extend(BitBoard.get_moves(self.board, one_move & ~BLACK_PROMOTE_MASK & ~WHITE_PROMOTE_MASK, pieceIdx))
+        moves.extend(BitBoard.get_moves(self.board, two_moves & ~BLACK_PROMOTE_MASK & ~WHITE_PROMOTE_MASK, pieceIdx, MoveType.EN_PASSANT))
+        moves.extend(BitBoard.get_moves(self.board, attack_board & ~en_passant_board & ~BLACK_PROMOTE_MASK & ~WHITE_PROMOTE_MASK, pieceIdx))
         move_board |= attack_board & ~en_passant_board
+        if self.color == "white":
+            promote_board = move_board & WHITE_PROMOTE_MASK
+        if self.color == "black":
+            promote_board = move_board & BLACK_PROMOTE_MASK
+        if promote_board:
+            moves.extend(BitBoard.get_moves(self.board, promote_board, pieceIdx, MoveType.PROMOTE))
 
         # en_passant_board &= attack_board
         if en_passant_board & attack_board > 0:

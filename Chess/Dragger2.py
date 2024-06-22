@@ -19,6 +19,7 @@ SQ_SIZE = HEIGHT // DIMENSION
 class Dragger2:
     def __init__(self):
         self.oldIdx = 0
+        self.newIdx = 0
         self.piece_board: BitBoard = None
         self.is_dragging = False
         self.mouseX = -100
@@ -33,6 +34,7 @@ class Dragger2:
             return
         self.piece_board = board
         self.oldIdx = idx
+        self.newIdx = 0
         self.is_dragging = True
 
     def update_mouse(self, pos) -> None:
@@ -87,6 +89,7 @@ class Dragger2:
                 if board_to_clear:
                     board_to_clear.clear_bit(newIdx)
                 self.is_dragging = False
+                self.newIdx = newIdx
                 return valid_move
         self.is_dragging = False
         return valid_move
@@ -97,6 +100,8 @@ class Dragger2:
         bitboard.clear_bit(move.get_final_idx())
         if board_to_set:
             board_to_set.set_bit(move.get_final_idx())
+        self.oldIdx = 0
+        self.newIdx = 0
     
     def simulate_drag(self, board: list, x: int, y: int) -> list:
         tmp_board = copy.deepcopy(board)
@@ -167,11 +172,11 @@ class Dragger2:
         self.mouseX = 0
         self.mouseY = 0
 
-    def get_piece(self) -> Piece:
-        return self.piece
+    def get_piece(self) -> BitBoard:
+        return self.piece_board
 
     def get_moves(self) -> list:
         return None
 
-    def get_moved_location(self) -> tuple:
-        return (self.postRow, self.postCol)
+    def get_moved_location(self) -> int:
+        return self.newIdx

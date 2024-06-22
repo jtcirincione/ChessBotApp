@@ -114,6 +114,10 @@ def handle_castle():
         return False
     return True
 
+## TODO: implement promotion logic
+def handle_promotion():
+    pass
+
 
 while not exit:
     game.show_bg()
@@ -122,8 +126,8 @@ while not exit:
         dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history)
         dragger.update_blit(game.surface)
     game.load(IMAGES)
-    # if promoting:
-    #     game.draw_promotions(piece=dragger.get_piece(), images=IMAGES)
+    if promoting:
+        game.draw_promotions(piece=dragger.get_piece(), images=IMAGES)
     # end game if king is check mate'd
     if game_over:
         exit = True
@@ -167,14 +171,14 @@ while not exit:
             posX, posY = p.mouse.get_pos()
             col, row = game.coord_to_idx(posX, posY)
 
-            # if promoting:
-            #     move_row, move_col = dragger.get_moved_location()
-            #     promoting = game.promote(move_row=move_row, move_col=move_col,
-            #                              men_row=row, men_col=col, color=dragger.get_piece().color)
-            #     if use_ai:
-            #         robot.choosing = False
-            #     game.finish_turn()
-            #     continue
+            if promoting:
+                move_idx = dragger.get_moved_location()
+                print(f"MOVED LOCATION: {move_idx}")
+                promoting = game.promote(move_idx=move_idx, men_row=row, men_col=col, color=dragger.get_piece().color)
+                if use_ai:
+                    robot.choosing = False
+                # game.finish_turn()
+                continue
             if not dragger.is_dragging:
                 board = game.get_proper_board(row * 8 + col)
                 dragger.update_pos(board, row*8+col, game)
@@ -207,6 +211,10 @@ while not exit:
                 if move_type == MoveType.CASTLE_LEFT or move_type == MoveType.CASTLE_RIGHT:
                     if not handle_castle():
                         continue
+                if move_type == MoveType.PROMOTE:
+                    print('PLEASE PRINT')
+                    promoting = True
+                    handle_promotion()
                 dragger.undrag()
                 game.history.append(move)
                 game.finish_turn()

@@ -5,6 +5,7 @@ class MoveType(Enum):
     EN_PASSANT_CAPTURE = 2
     CASTLE_LEFT = 3
     CASTLE_RIGHT = 4
+    PROMOTE = 5
 
 
 # move = MoveType(0)

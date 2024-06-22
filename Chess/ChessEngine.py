@@ -170,8 +170,8 @@ class GameState():
         return False
             
 
-    def draw_promotions(self, piece: Piece, images: dict) -> None:
-        if not isinstance(piece, Pawn):
+    def draw_promotions(self, piece: BitBoard, images: dict) -> None:
+        if not isinstance(piece, PawnBoard):
             return
         if piece.color == "black":
             self.surface.blit(images["promotebN"], (7 * SQ_SIZE, 7 * SQ_SIZE))
@@ -185,31 +185,35 @@ class GameState():
             self.surface.blit(images["promotewB"], (4 * SQ_SIZE, 0 * SQ_SIZE))
 
     # Might fix later but return true if method fails (didn't promote), return false if promoted
-    def promote(self, move_row: int, move_col: int, men_row: int, men_col: int, color: str) -> bool:
+    def promote(self, move_idx: int, men_row: int, men_col: int, color: str) -> bool:
         print(f"indices: ({men_row}, {men_col})")
         for key, val in self.promotions.items():
             if (men_row, men_col) in val:
                 print(f"Selected item: {key}, {val}")
+                if color == "black":
+                    self.boards["bp"].clear_bit(move_idx)
+                else:
+                    self.boards["wp"].clear_bit(move_idx)
                 if key == "Queen":
                     if color == "black":
-                        self.board[move_row][move_col] = Queen("bQ", color)
+                        self.boards["bQ"].set_bit(move_idx)
                     else:
-                        self.board[move_row][move_col] = Queen("wQ", color)
+                        self.boards["wQ"].set_bit(move_idx)
                 elif key == "Knight":
                     if color == "black":
-                        self.board[move_row][move_col] = Knight("bN", color)
+                        self.boards["bN"].set_bit(move_idx)
                     else:
-                        self.board[move_row][move_col] = Knight("wN", color)
+                        self.boards["wN"].set_bit(move_idx)
                 elif key == "Bishop":
                     if color == "black":
-                        self.board[move_row][move_col] = Bishop("bB", color)
+                        self.boards["bB"].set_bit(move_idx)
                     else:
-                        self.board[move_row][move_col] = Bishop("wB", color)
+                        self.boards["wB"].set_bit(move_idx)
                 elif key == "Rook":
                     if color == "black":
-                        self.board[move_row][move_col] = Rook("bR", color)
+                        self.boards["bR"].set_bit(move_idx)
                     else:
-                        self.board[move_row][move_col] = Rook("wR", color)
+                        self.boards["wR"].set_bit(move_idx)
 
                 return False
         return True
