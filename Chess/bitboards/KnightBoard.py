@@ -1,5 +1,8 @@
 from bitboards.BitBoard import BitBoard
 import numpy as np
+from Move2 import Move2
+from enums.MoveType import MoveType
+
 FILE_AB_MASK = np.uint64(
     0b0011111100111111001111110011111100111111001111110011111100111111)
 FILE_GH_MASK = np.uint64(
@@ -62,7 +65,7 @@ class KnightBoard(BitBoard):
         valid_moves |= position
         return valid_moves
 
-    def attacking_squares(self, pieceIdx, my_color_board: np.uint64, enemy_board: np.uint64) -> np.uint64:
+    def attacking_squares(self, pieceIdx, my_color_board: np.uint64, enemy_board: np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
         board = self.get_single_piece_board(self.board, pieceIdx)
         valid_moves = np.uint64(0)
         for move in self.moves:
@@ -79,4 +82,6 @@ class KnightBoard(BitBoard):
             if move == -15 or move == 17:
                 position &= FILE_H_MASK
             valid_moves |= position
-        return valid_moves & ~my_color_board
+        valid_moves &= ~my_color_board
+        moves = BitBoard.get_moves(self.board, valid_moves, pieceIdx)
+        return (valid_moves, moves)

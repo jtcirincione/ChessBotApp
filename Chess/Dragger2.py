@@ -9,6 +9,8 @@ from bitboards.QueenBoard import QueenBoard
 from bitboards.KnightBoard import KnightBoard
 import copy
 import pygame, numpy as np
+from Move2 import Move2
+from enums.MoveType import MoveType
 WIDTH = HEIGHT = 512
 # Dimensions of the board
 DIMENSION = ROWS = COLS = 8
@@ -23,6 +25,8 @@ class Dragger2:
         self.mouseY = -100
 
     def update_pos(self, board: BitBoard, idx, game: GameState) -> None:
+        if not board:
+            return
         if not board.get_bit(idx):
             return
         if board.color == 'black' and game.white_to_move() == True or board.color == 'white' and game.white_to_move() == False:
@@ -40,16 +44,15 @@ class Dragger2:
         img_center = (self.mouseX, self.mouseY)
         surface.blit(img, img.get_rect(center=img_center))
 
-    def illuminate_moves(self, surface, my_board, opp_board) -> None:
-        moves = self.piece_board.attacking_squares(self.oldIdx, my_board, opp_board)
+    def illuminate_moves(self, surface, my_board, opp_board, move_history) -> None:
+        _, moves = self.piece_board.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
 
-        for row in range(8):
-            for col in range(8):
-                idx = row * 8 + col
-                if BitBoard.get_bit_on_board(idx, moves) == 1:
-                    rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-                    color = (255,255,102)
-                    pygame.draw.rect(surface=surface, color=color, rect=rect)
+        for move in moves:
+            idx = move.get_final_idx()
+            row, col = Move2.convert_idx_to_rc(idx)
+            rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+            color = (255,255,102)
+            pygame.draw.rect(surface=surface, color=color, rect=rect)
 
     def illuminate_all_moves(self, surface, boards: list[BitBoard], color):
         moves = np.uint64(0)
@@ -70,17 +73,30 @@ class Dragger2:
                     pygame.draw.rect(surface=surface, color=color, rect=rect)
 
 
-    def drag2(self, bitboard: BitBoard, newIdx, my_board, opp_board, board_to_clear: BitBoard=np.uint64(0)):
-        dragged: bool = False
-        if bitboard.get_bit_on_board(newIdx, bitboard.attacking_squares(self.oldIdx, my_board, opp_board)):
-            bitboard.move_piece(self.oldIdx, newIdx)
-            self.oldIdx = newIdx
-            dragged = True
-            if board_to_clear:
-                board_to_clear.clear_bit(newIdx)
+    def drag2(self, bitboard: BitBoard, newIdx, my_board, opp_board, move_history, board_to_clear: BitBoard=np.uint64(0)) -> Move2:
+        valid_move = None
+        if not bitboard:
+            return None
+        _, moves = bitboard.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
+        for move in moves:
+            if move.get_final_idx() == newIdx:
+                # if move.get_move_type() == MoveType.EN_PASSANT:
+                bitboard.move_piece(self.oldIdx, newIdx)
+                self.oldIdx = newIdx
+                valid_move = move
+                if board_to_clear:
+                    board_to_clear.clear_bit(newIdx)
+                self.is_dragging = False
+                return valid_move
         self.is_dragging = False
-        return dragged
+        return valid_move
 
+    ##TODO: instead of undragging for castling, find new way to check if rooks have moved
+    def undo_drag(self, bitboard: BitBoard, move: Move2, board_to_set: BitBoard=np.uint64(0)):
+        bitboard.set_bit(move.get_initial_idx())
+        bitboard.clear_bit(move.get_final_idx())
+        if board_to_set:
+            board_to_set.set_bit(move.get_final_idx())
     
     def simulate_drag(self, board: list, x: int, y: int) -> list:
         tmp_board = copy.deepcopy(board)

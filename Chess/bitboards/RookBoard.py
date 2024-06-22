@@ -1,11 +1,16 @@
 from bitboards.BitBoard import BitBoard
+from Move2 import Move2
+from enums.MoveType import MoveType
 import numpy as np, warnings
+
 FILE_H_MASK = np.uint64(0b1000000010000000100000001000000010000000100000001000000010000000)
 RANK_8_MASK = np.uint64(0b1111111100000000000000000000000000000000000000000000000000000000)
 RANK_1_MASK = np.uint64(0b0000000000000000000000000000000000000000000000000000000011111111)
 class RookBoard(BitBoard):
     def __init__(self, color):
         board = self.initialize_board(color)
+        self.left_rook_moved = False
+        self.right_rook_moved = False
         name = "bR" if color == "black" else "wR"
         super().__init__(color, board, name)
 
@@ -16,18 +21,25 @@ class RookBoard(BitBoard):
     
     def reset(self):
         self.board = self.initialize_board(self.color)
+        self.left_rook_moved = self.right_rook_moved = False
 
-    def get_rook_locs(self, board: np.uint64) -> tuple[list[int],list[int]]:
-        ranks = []
-        files = []
-        for rank in range(8):
-            for file in range(8):
-                idx = rank * 8 + file
-                if self.get_bit(board, idx):
-                    ranks.append(rank)
-                    files.append(file)
+    def move_piece(self, clrIdx, setIdx) -> None:
+        if not (0 <= setIdx < 64) or not (0 <= clrIdx < 64):
+            raise Exception("Square must be from 0 to 63")
+        self.set_bit(setIdx)
+        self.clear_bit(clrIdx)
+        if self.color == "white":
+            if clrIdx == 56:
+                self.left_rook_moved = True
+            elif clrIdx == 63:
+                self.right_rook_moved = True
+        else:
+            if clrIdx == 0:
+                self.left_rook_moved = True
+            elif clrIdx == 7:
+                self.right_rook_moved = True
 
-        return (ranks, files)
+
 
     def h_v_moves(self, idx, occupied: np.uint64):
         s = self.get_single_piece_board(self.board, idx)
@@ -43,9 +55,9 @@ class RookBoard(BitBoard):
     # mask all ranks above/below rook for horizontal moves
     # mask out files to left/right of rook for vertical moves
     def valid_moves(self) -> np.uint64:
-        ranks, files = self.get_rook_locs(self.board)
-        valid_moves = 0
-        return valid_moves
+        pass
     
-    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
-        return self.h_v_moves(pieceIdx, enemy_board | my_color_board) & ~my_color_board
+    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
+        attack_board = self.h_v_moves(pieceIdx, enemy_board | my_color_board) & ~my_color_board
+        moves = BitBoard.get_moves(self.board, attack_board, pieceIdx)
+        return (attack_board, moves)

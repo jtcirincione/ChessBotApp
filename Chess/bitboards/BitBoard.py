@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import os
 import numpy as np
+from enums.MoveType import MoveType
+from Move2 import Move2
 
 # # from top right to bottom left
 # diagonal_masks = [
@@ -171,6 +173,17 @@ class BitBoard(ABC):
         x = (x << np.uint64(32)) | (x >> np.uint64(32))
         return x & np.uint64(0xFFFFFFFFFFFFFFFF)
     
+    @staticmethod
+    def get_moves(my_board, attack_board, start_square, move_type=MoveType.QUIET) -> list[Move2]:
+        moves: list[Move2] = []
+        for rank in range(8):
+            for file in range(8):
+                idx = rank * 8 + file
+                if BitBoard.get_bit_on_board(idx, attack_board):
+                    move = Move2(my_board, start_square, idx, move_type)
+                    moves.append(move)
+        return moves
+    
     # def reverse_bits(self, b: np.uint64):
     #     b = (b & np.uint64(0x5555555555555555)) << np.uint64(1) | ((b >> np.uint64(1)) & np.uint64(0x5555555555555555))
     #     b = (b & np.uint64(0x3333333333333333)) << np.uint64(2) | ((b >> np.uint64(2)) & np.uint64(0x3333333333333333))
@@ -206,8 +219,8 @@ class BitBoard(ABC):
         if not (0 <= idx < 64):
             raise Exception(f"Square {idx} must be from 0 to 63")
         bshift = np.uint64(63 - idx)
-        if not self.get_bit(idx):
-            raise Exception(f"There is not a piece at index {idx}")
+        # if not self.get_bit(idx):
+        #     raise Exception(f"There is not a piece at index {idx}")
         return board & (np.uint64(1)<<bshift)
 
     def print_board(self) -> None:
@@ -245,7 +258,7 @@ class BitBoard(ABC):
         pass
 
     @abstractmethod
-    def attacking_squares(self, pieceIdx:int, my_color_board:'BitBoard', enemy_board:'BitBoard') -> np.uint64:
+    def attacking_squares(self, pieceIdx:int, my_color_board:'BitBoard', enemy_board:'BitBoard', move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
         pass
 
     def move_piece(self, clrIdx, setIdx) -> None:
@@ -265,11 +278,3 @@ class BitBoard(ABC):
         bshift = np.uint64(63 - idx)
         self.board &= ~(np.uint64(1) << bshift)
 
-    def get_idxs(self) -> list[tuple[int, int]]:
-        idxs: list[tuple[int, int]] = []
-        for rank in range(8):
-            for file in range(8):
-                idx = rank * 8 + file
-                if self.get_bit(idx):
-                    idxs.append(rank, file)
-        return idxs

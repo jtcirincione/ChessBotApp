@@ -1,5 +1,8 @@
 from bitboards.BitBoard import BitBoard
+from Move2 import Move2
+from enums.MoveType import MoveType
 import numpy as np, warnings
+
 class QueenBoard(BitBoard):
     def __init__(self, color):
         board = self.initialize_board(color)
@@ -41,5 +44,7 @@ class QueenBoard(BitBoard):
     def valid_moves(self):
         pass
 
-    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
-        return (self.d_anti_moves(pieceIdx, enemy_board | my_color_board) | self.h_v_moves(pieceIdx, enemy_board | my_color_board)) & ~my_color_board
+    def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
+        attack_board = (self.d_anti_moves(pieceIdx, enemy_board | my_color_board) | self.h_v_moves(pieceIdx, enemy_board | my_color_board)) & ~my_color_board
+        moves = BitBoard.get_moves(self.board, attack_board, pieceIdx)
+        return (attack_board, moves)

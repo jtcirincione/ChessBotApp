@@ -1,6 +1,8 @@
 from bitboards.BitBoard import BitBoard
 from Move2 import Move2
 import numpy as np
+from enums.MoveType import MoveType
+
 BLACK_2MOVE_ROW = np.uint64(0b0000000000000000000000001111111100000000000000000000000000000000)
 WHITE_2MOVE_ROW = np.uint64(0b0000000000000000000000000000000011111111000000000000000000000000)
 BLACK_PASSANT_ROW = np.uint64(0b0000000000000000111111110000000000000000000000000000000000000000)
@@ -22,25 +24,11 @@ class PawnBoard(BitBoard):
     
     def reset(self):
         self.board = self.initialize_board(self.color)
-    
-
-    ##TODO: Add masking logic for moving up 2
-    def valid_moves(self) -> np.uint64:
-        if self.color == "white":
-            two_moves = WHITE_2MOVE_ROW & (self.board << np.uint64(16))
-            one_move = self.board << np.uint64(8)
-            move_board = one_move | two_moves
-            ## CAPTURES
-        if self.color == "black":
-            two_moves = BLACK_2MOVE_ROW & (self.board >> np.uint64(16))
-            one_move = self.board >> np.uint64(8)
-            move_board = one_move | two_moves
-        return move_board
-    
+        
 
     def get_left_attacks(self, board, enemy_board):
         if self.color == "white":
-            attacks = (board << np.uint64(9)) & FILE_A_MASK
+            attacks = (board << np.uint64(9)) & FILE_H_MASK
         else:
             attacks = (board >> np.uint64(7)) & FILE_H_MASK
         return attacks & enemy_board
@@ -50,22 +38,65 @@ class PawnBoard(BitBoard):
         if self.color == "white":
             attacks = (board << np.uint64(7)) & FILE_A_MASK
         else:
-            attacks = (board >> np.uint64(9)) & FILE_H_MASK
+            attacks = (board >> np.uint64(9)) & FILE_A_MASK
         return attacks & enemy_board
 
     def get_attacking_board(self, board, enemy_board: np.uint64):
         return self.get_left_attacks(board, enemy_board) | self.get_right_attacks(board, enemy_board)
 
 
-    def attacking_squares(self, pieceIdx:int, my_color_board:np.uint64, enemy_board:np.uint64) -> np.uint64:
-        board = self.get_single_piece_board(self.board, pieceIdx)
+    ##TODO: Add masking logic for moving up 2
+    def valid_moves(self, my_color_board, enemy_board) -> np.uint64:
         if self.color == "white":
-            one_move = np.uint64(board << np.uint64(8)) & ~my_color_board
+            one_move = np.uint64(self.board << np.uint64(8)) & ~my_color_board
             two_moves = np.uint64(WHITE_2MOVE_ROW & (one_move << np.uint64(8))) & ~my_color_board
             move_board = np.uint64(one_move | two_moves)
         if self.color == "black":
-            one_move = board >> np.uint64(8)
+            one_move = self.board >> np.uint64(8)
             two_moves = np.uint64(BLACK_2MOVE_ROW & (one_move >> np.uint64(8)))
             move_board = one_move | two_moves
-        move_board |= self.get_attacking_board(board, enemy_board)
-        return move_board & ~my_color_board
+            move_board |= self.get_attacking_board(self.board, enemy_board)
+        return move_board
+    
+    def attacking_squares(self, pieceIdx:int, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
+        board = self.get_single_piece_board(self.board, pieceIdx)
+        en_passant_board = np.uint64(0)
+        moves = []
+
+
+        ## En passant logic
+        ## check most recent move and see if it is en passant
+        if len(move_history) > 1:
+            last_move = move_history[-1]
+            ## if the last move that was made resulted in an en passant enabled
+            if last_move.get_move_type() == MoveType.EN_PASSANT:
+                if self.color == "white":
+                    new_idx = last_move.get_final_idx() - 8
+                if self.color == "black":
+                    new_idx = last_move.get_final_idx() + 8
+                ## set square that can be captured to an enemy square
+                en_passant_board = self.get_single_piece_board(np.uint64(0xFFFFFFFFFFFFFFFF), new_idx)
+                enemy_board |= en_passant_board
+            # print(f"Enemy board:\n{BitBoard.print_board_2(enemy_board)}")
+
+
+        if self.color == "white":
+            one_move = np.uint64(board << np.uint64(8)) & ~my_color_board & ~enemy_board
+            two_moves = np.uint64(WHITE_2MOVE_ROW & (one_move << np.uint64(8))) & ~my_color_board & ~enemy_board
+            move_board = np.uint64(one_move | two_moves)
+        if self.color == "black":
+            one_move = board >> np.uint64(8) & ~my_color_board & ~enemy_board
+            two_moves = np.uint64(BLACK_2MOVE_ROW & (one_move >> np.uint64(8))) & ~my_color_board & ~enemy_board
+            move_board = one_move | two_moves
+        # one_move
+        attack_board = self.get_attacking_board(board, enemy_board) & ~my_color_board
+        moves.extend(BitBoard.get_moves(self.board, one_move, pieceIdx))
+        moves.extend(BitBoard.get_moves(self.board, two_moves, pieceIdx, MoveType.EN_PASSANT))
+        moves.extend(BitBoard.get_moves(self.board, attack_board & ~en_passant_board, pieceIdx))
+        move_board |= attack_board & ~en_passant_board
+
+        # en_passant_board &= attack_board
+        if en_passant_board & attack_board > 0:
+            moves.append(Move2(move_board, pieceIdx, new_idx, MoveType.EN_PASSANT_CAPTURE))
+
+        return (move_board, moves)

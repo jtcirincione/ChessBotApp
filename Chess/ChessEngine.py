@@ -4,6 +4,8 @@ Responsible for storing all info about the current state of a chess game and val
 import numpy as np
 from Piece import Piece, Pawn, Rook, Knight, King, Queen, Bishop
 from Move import Move
+from Move2 import Move2
+from enums.MoveType import MoveType
 import pygame, utils.check as check
 from bitboards.BitBoard import BitBoard
 from bitboards.BishopBoard import BishopBoard
@@ -78,6 +80,7 @@ class GameState():
             "Rook": [(7, 5), (0, 5)],
             "Bishop": [(7, 4), (0, 4)]
         }
+        self.history: list[Move2] = []
 
     def coord_to_idx(self, posX: int, posY: int) -> tuple:
         x = posX // SQ_SIZE
@@ -109,16 +112,6 @@ class GameState():
                 rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 pygame.draw.rect(self.surface, color, rect)
 
-    # def load(self, images: dict) -> None:
-    #     for row in range(len(self.board)):
-    #         for col in range(len(self.board[row])):
-    #             if self.board[row][col] != "--":
-    #                 # print(self.board[row][col])
-    #                 if self.board[row][col] == None:
-    #                     print(f"indices in board: {row}, {col}")
-    #                     print(f"board: \n{self.board}")
-    #                 self.surface.blit(
-    #                     images[self.board[row][col].name], (col * SQ_SIZE, row * SQ_SIZE))
     
     ## returns the bitboard type of piece at given index: idx
     def get_pieces_board(self, idx):
@@ -134,54 +127,6 @@ class GameState():
                 for key, board in self.boards.items():
                     if board.get_bit(square) == 1:
                         self.surface.blit(images[key], (file * SQ_SIZE, rank * SQ_SIZE))
-                # if self.black_bishop_board.get_bit(square) == 1:
-                #     self.surface.blit(
-                #         images['bB'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.black_pawn_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['bp'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.black_rook_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['bR'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.black_knight_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['bN'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.black_queen_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['bQ'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.black_king_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['bK'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_bishop_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['wB'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_pawn_board.get_bit(square) == 1:
-                #     self.surface.blit(
-                #         images['wp'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_rook_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['wR'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_knight_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['wN'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_queen_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['wQ'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
-                # if self.white_king_board.get_bit(square):
-                #     self.surface.blit(
-                #         images['wK'], (file * SQ_SIZE, rank * SQ_SIZE)
-                #     )
     
     def get_proper_board(self, idx):
         for board in self.boards.values():

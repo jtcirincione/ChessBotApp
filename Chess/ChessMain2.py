@@ -7,10 +7,12 @@ import ChessEngine
 from Dragger2 import Dragger2
 from Piece import Pawn
 import yaml
-import copy, os
+import copy
+import os
 from ai.Robot import Robot
 from bitboards.PawnBoard import PawnBoard
 from bitboards.BitBoard import BitBoard
+from enums.MoveType import MoveType
 
 # Size of board
 WIDTH = HEIGHT = 512
@@ -76,13 +78,48 @@ ai_color = 'black'
 illuminate_white = illuminate_black = False
 
 
+def handle_castle():
+    if game.current_turn() == "white":
+        valid_castle = False
+        if move_type == MoveType.CASTLE_LEFT:
+            if not game.boards["wR"].left_rook_moved and game.boards["wR"].get_bit(56):
+                print('HI1')
+                # TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to right of king
+                game.boards["wR"].move_piece(
+                    56, move.get_final_idx() + 1)
+                valid_castle = True
+        if move_type == MoveType.CASTLE_RIGHT:
+            if not game.boards["wR"].right_rook_moved and game.boards["wR"].get_bit(63):
+                print('HI2')
+                # TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to left of king
+                game.boards["wR"].move_piece(
+                    63, move.get_final_idx() - 1)
+                valid_castle = True
+    else:
+        valid_castle = False
+        if move_type == MoveType.CASTLE_LEFT:
+            if not game.boards["bR"].left_rook_moved  and game.boards["bR"].get_bit(0):
+                ## TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to right of king
+                game.boards["bR"].move_piece(0, move.get_final_idx() + 1)
+                valid_castle = True
+        if move_type == MoveType.CASTLE_RIGHT:
+            if not game.boards["bR"].right_rook_moved  and game.boards["bR"].get_bit(7):
+                ## TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to left of king
+                game.boards["bR"].move_piece(7, move.get_final_idx() - 1)
+                valid_castle = True
+    if not valid_castle:
+        print("UNDO INVALID CASTLE")
+        game.get_proper_board(new_idx).moved = False
+        dragger.undo_drag(game.get_proper_board(new_idx), move, board_to_clear)
+        return False
+    return True
 
 
 while not exit:
     game.show_bg()
     if dragger.is_dragging:
         # print(type(dragger.piece_board))
-        dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board())
+        dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history)
         dragger.update_blit(game.surface)
     game.load(IMAGES)
     # if promoting:
@@ -153,17 +190,32 @@ while not exit:
                 if use_ai:
                     robot.choosing = False
                 old_idx = dragger.oldIdx
-                dragged = dragger.drag2(game.get_proper_board(old_idx), new_idx, game.get_current_player_board(), game.get_opponent_board(), game.get_proper_board(new_idx))
-                dragger.undrag()
-                if not dragged:
+                board_to_clear = game.get_proper_board(new_idx)
+                move = dragger.drag2(game.get_proper_board(old_idx), new_idx, game.get_current_player_board(), game.get_opponent_board(), game.history, board_to_clear)
+                if move is None:
                     continue
+                move_type = move.get_move_type()
+                if move_type == MoveType.EN_PASSANT_CAPTURE:
+                    if game.current_turn() == "white":
+                        idx = new_idx + 8
+                        prop_board = game.get_proper_board(idx)
+                    else:
+                        idx = new_idx - 8
+                        prop_board = game.get_proper_board(idx)
+                    if prop_board != 0:
+                        prop_board.clear_bit(idx)
+                if move_type == MoveType.CASTLE_LEFT or move_type == MoveType.CASTLE_RIGHT:
+                    if not handle_castle():
+                        continue
+                dragger.undrag()
+                game.history.append(move)
                 game.finish_turn()
                 # undo move for invalid
         # Dragging motion
         elif event.type == p.MOUSEMOTION:
             if dragger.is_dragging:
                 game.show_bg()
-                dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board())
+                dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history)
                 game.load(IMAGES)
                 dragger.update_mouse(p.mouse.get_pos())
                 dragger.update_blit(game.surface)
