@@ -75,24 +75,24 @@ class Dragger2:
                     pygame.draw.rect(surface=surface, color=color, rect=rect)
 
 
-    def drag2(self, bitboard: BitBoard, newIdx, my_board, opp_board, move_history, board_to_clear: BitBoard=np.uint64(0)) -> Move2:
-        valid_move = None
-        if not bitboard:
-            return None
-        _, moves = bitboard.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
-        for move in moves:
-            if move.get_final_idx() == newIdx:
-                # if move.get_move_type() == MoveType.EN_PASSANT:
-                bitboard.move_piece(self.oldIdx, newIdx)
-                self.oldIdx = newIdx
-                valid_move = move
-                if board_to_clear:
-                    board_to_clear.clear_bit(newIdx)
-                self.is_dragging = False
-                self.newIdx = newIdx
-                # return valid_move
-        self.is_dragging = False
-        return moves
+    # def drag2(self, bitboard: BitBoard, newIdx, my_board, opp_board, move_history, board_to_clear: BitBoard=np.uint64(0)) -> Move2:
+    #     valid_move = None
+    #     if not bitboard:
+    #         return None
+    #     _, moves = bitboard.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
+    #     for move in moves:
+    #         if move.get_final_idx() == newIdx:
+    #             # if move.get_move_type() == MoveType.EN_PASSANT:
+    #             bitboard.move_piece(self.oldIdx, newIdx)
+    #             self.oldIdx = newIdx
+    #             valid_move = move
+    #             if board_to_clear:
+    #                 board_to_clear.clear_bit(newIdx)
+    #             self.is_dragging = False
+    #             self.newIdx = newIdx
+    #             # return valid_move
+    #     self.is_dragging = False
+    #     return moves
     
     def drag2(self, bitboard: BitBoard, move: Move2, board_to_clear: BitBoard=np.uint64):
         newIdx = move.get_final_idx()

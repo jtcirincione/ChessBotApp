@@ -1,4 +1,4 @@
 game_settings:
-    robot: False
+    robot: True
     robot_color: "black"
     difficulty: "easy"
