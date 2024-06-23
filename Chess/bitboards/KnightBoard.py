@@ -45,15 +45,14 @@ class KnightBoard(BitBoard):
 
     # Apply mask if piece is on A, B or G, H ranks
     # AB mask for right bit shifts, GH for left
-    def valid_moves(self, idx):
-        mask = 1 << idx
-        board = mask & self.board
-        valid_moves = np.uint64(0x0000000000000000)
+    def valid_moves(self, my_color_board, enemy_board, move_history):
+        board = self.board
+        valid_moves = np.uint64(0)
         for move in self.moves:
             if move > 0:
-                position = (board << move)
+                position = (board << np.uint64(move))
             else:
-                position = (board >> -move)
+                position = (board >> np.uint64(-move))
             if move == 6 or move == -10:
                 position &= FILE_AB_MASK
             if move == 15 or move == -17:
@@ -62,7 +61,8 @@ class KnightBoard(BitBoard):
                 position &= FILE_GH_MASK
             if move == -15 or move == 17:
                 position &= FILE_H_MASK
-        valid_moves |= position
+            valid_moves |= position
+        valid_moves &= ~my_color_board
         return valid_moves
 
     def attacking_squares(self, pieceIdx, my_color_board: np.uint64, enemy_board: np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:

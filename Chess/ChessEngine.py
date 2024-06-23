@@ -39,19 +39,19 @@ class GameState():
                 "wK", "white"), Bishop("wB", "white"), Knight("wN", "white"), Rook("wR", "white")]
         ]
 
-        self.white_pawn_board = PawnBoard("white")
-        self.white_rook_board = RookBoard("white")
-        self.white_queen_board = QueenBoard("white")
-        self.white_bishop_board = BishopBoard("white")
-        self.white_knight_board = KnightBoard("white")
-        self.white_king_board = KingBoard("white")
+        # self.white_pawn_board = PawnBoard("white")
+        # self.white_rook_board = RookBoard("white")
+        # self.white_queen_board = QueenBoard("white")
+        # self.white_bishop_board = BishopBoard("white")
+        # self.white_knight_board = KnightBoard("white")
+        # self.white_king_board = KingBoard("white")
         
-        self.black_pawn_board = PawnBoard("black")
-        self.black_rook_board = RookBoard("black")
-        self.black_queen_board = QueenBoard("black")
-        self.black_bishop_board = BishopBoard("black")
-        self.black_knight_board = KnightBoard("black")
-        self.black_king_board = KingBoard("black")
+        # self.black_pawn_board = PawnBoard("black")
+        # self.black_rook_board = RookBoard("black")
+        # self.black_queen_board = QueenBoard("black")
+        # self.black_bishop_board = BishopBoard("black")
+        # self.black_knight_board = KnightBoard("black")
+        # self.black_king_board = KingBoard("black")
 
         self.boards: dict[str, BitBoard]= {
             "wp": PawnBoard("white"),
@@ -95,6 +95,14 @@ class GameState():
     def get_b_board(self):
         b_board = self.boards["bp"].board | self.boards["bR"].board | self.boards["bB"].board | self.boards["bN"].board | self.boards["bK"].board | self.boards["bQ"].board
         return b_board
+    
+    def get_b_attack_squares(self) -> np.uint64:
+        b_attacks = self.boards["bp"].valid_moves(self.get_b_board(), self.get_w_board(), self.history) | self.boards["bR"].valid_moves(self.get_b_board(), self.get_w_board(), self.history) | self.boards["bB"].valid_moves(self.get_b_board(), self.get_w_board(), self.history) | self.boards["bN"].valid_moves(self.get_b_board(), self.get_w_board(), self.history) | self.boards["bK"].valid_moves(self.get_b_board(), self.get_w_board(), self.history) | self.boards["bQ"].valid_moves(self.get_b_board(), self.get_w_board(), self.history)
+        return b_attacks
+    
+    def get_w_attack_squares(self) -> np.uint64:
+        w_attacks = self.boards["wp"].valid_moves(self.get_w_board(), self.get_b_board(), self.history) | self.boards["wR"].valid_moves(self.get_w_board(), self.get_b_board(), self.history) | self.boards["wB"].valid_moves(self.get_w_board(), self.get_b_board(), self.history) | self.boards["wN"].valid_moves(self.get_w_board(), self.get_b_board(), self.history) | self.boards["wK"].valid_moves(self.get_w_board(), self.get_b_board(), self.history) | self.boards["wQ"].valid_moves(self.get_w_board(), self.get_b_board(), self.history)
+        return w_attacks
     
     def get_opponent_board(self):
         return self.get_b_board() if self.current_turn() == "white" else self.get_w_board()
@@ -169,6 +177,36 @@ class GameState():
                return BitBoard.get_bit_on_board(new_idx, board.attacking_squares(old_idx, np.uint64(0), np.uint64(0)))
         return False
             
+    ## FIXME: currently invalid castling isn't prevented. the king can move thru attacked squares
+    def check_valid_castle(self, move: Move2, new_idx):
+        move_type = move.get_move_type()
+        old_idx = move.get_initial_idx()
+        if self.current_turn() == "white":
+            valid_castle = False
+            if move_type == MoveType.CASTLE_LEFT:
+                if not self.boards["wR"].left_rook_moved and self.boards["wR"].get_bit(56):
+                    print('HI1')
+                    valid_castle = True
+            if move_type == MoveType.CASTLE_RIGHT:
+                if not self.boards["wR"].right_rook_moved and self.boards["wR"].get_bit(63):
+                    print('HI2')
+                    valid_castle = True
+        else:
+            valid_castle = False
+            if move_type == MoveType.CASTLE_LEFT:
+                if not self.boards["bR"].left_rook_moved  and self.boards["bR"].get_bit(0):
+                    ## TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to right of king
+                    valid_castle = True
+            if move_type == MoveType.CASTLE_RIGHT:
+                if not self.boards["bR"].right_rook_moved  and self.boards["bR"].get_bit(7):
+                    ## TODO: SINCE ROOK HASN'T MOVED, MOVE THE ROOK DURING CASTLE one space to left of king
+                    valid_castle = True
+        if not valid_castle:
+            print("UNDO INVALID CASTLE")
+            self.get_proper_board(old_idx).moved = False
+            return False
+        return True
+
 
     def draw_promotions(self, piece: BitBoard, images: dict) -> None:
         if not isinstance(piece, PawnBoard):
@@ -251,11 +289,11 @@ class GameState():
     # take in a board as a parameter instead of using self,
     # as we send a board copy simulating a move to check if
     # it exposes the king
-    def king_in_check(self, king_chk_color: str, board: list) -> bool:
-        in_check = check.king_in_check(king_chk_color, board)
-        if in_check:
-            self.set_king_checked(king_chk_color)
-        return in_check
+    # def king_in_check(self, king_chk_color: str, board: list) -> bool:
+    #     in_check = check.king_in_check(king_chk_color, board)
+    #     if in_check:
+    #         self.set_king_checked(king_chk_color)
+    #     return in_check
     
     def has_valid_moves(self, board, dragger):
         moves:list[Move] = []
@@ -274,3 +312,91 @@ class GameState():
                 return True
         
         return False
+    
+    def in_checkmate(self, color):
+        pseudos = []
+        legals = []
+        if color == "white":
+            white_pieces = self.get_w_board()
+            for i in range(64):
+                if BitBoard.get_bit_on_board(i, white_pieces):
+                    bboard = self.get_proper_board(i)
+                    _, moves = bboard.attacking_squares(i, white_pieces, self.get_b_board(), self.history)
+                    pseudos.extend(moves)
+            if pseudos is not None:
+                legals = self.get_legal_moves(pseudos, "white")
+        else:
+            black_pieces = self.get_b_board()
+            for i in range(64):
+                if BitBoard.get_bit_on_board(i, black_pieces):
+                    bboard = self.get_proper_board(i)
+                    _, moves = bboard.attacking_squares(i, black_pieces, self.get_w_board(), self.history)
+                    pseudos.extend(moves)
+            if pseudos is not None:
+                legals = self.get_legal_moves(pseudos, "black")
+
+        if len(legals) == 0: 
+            print("mated")
+            return True
+        return False
+    
+    def undo_move(self, bitboard: BitBoard, move: Move2, board_to_set: BitBoard=np.uint64(0)):
+        bitboard.set_bit(move.get_initial_idx())
+        bitboard.clear_bit(move.get_final_idx())
+        if board_to_set:
+            board_to_set.set_bit(move.get_final_idx())
+            if isinstance(board_to_set, KingBoard):
+                board_to_set.moved = False
+
+
+    def move(self, bitboard: BitBoard, move: Move2, board_to_clear: BitBoard=np.uint64(0)):
+        ## dont use move_piece() to prevent setting king to moved in simulation
+        bitboard.clear_bit(move.get_initial_idx())
+        bitboard.set_bit(move.get_final_idx())
+        if board_to_clear:
+            board_to_clear.clear_bit(move.get_final_idx())
+
+
+    def king_in_check(self, enemies, color) -> bool:
+        in_check = np.uint64(0)
+        if color == "white":
+            in_check = enemies & self.boards["wK"].board
+        else:
+            in_check = enemies & self.boards["bK"].board
+        return True if in_check != 0 else False
+
+    def get_legal_moves(self, moves: list[Move2], color: str):
+        for i in range(len(moves)-1, -1, -1):
+            move = moves[i]
+            move_type = move.get_move_type()
+            board_to_move = self.get_proper_board(move.get_initial_idx())
+            # if move_type == MoveType.EN_PASSANT_CAPTURE:
+            #     if self.current_turn() == "white":
+            #         idx = new_idx + 8
+            #         prop_board = self.get_proper_board(idx)
+            #     else:
+            #         idx = new_idx - 8
+            #         prop_board = self.get_proper_board(idx)
+            #     if prop_board != 0:
+            #         prop_board.clear_bit(idx)
+            if move_type == MoveType.CASTLE_LEFT or move_type == MoveType.CASTLE_RIGHT:
+                if not self.check_valid_castle(move, move.get_final_idx()):
+                    # moves.remove(move)
+                    moves.pop(i)
+            # Simulate a move
+            board_to_clear = self.get_proper_board(move.get_final_idx())
+            ##TODO: Investigate faster ways to do this. Generating attack squares for every possible move is slow
+            self.move(board_to_move, move, board_to_clear)
+            ## NOW CHECK IF KING IS IN CHECK
+            # if color == "white":
+            #     king_board = np.uint64(1) << np.uint64(63 - move.get_final_idx()) if isinstance(board_to_move, KingBoard) else self.boards["wK"].board
+            # else:
+            #     king_board = np.uint64(1) << np.uint64(63 - move.get_final_idx()) if isinstance(board_to_move, KingBoard) else self.boards["bK"].board
+            # print(f"enemy attack squares:\n{BitBoard.print_board_2(enemies)}")
+            ## if the king is on an enemy square
+            # print(f"king location:\n:{BitBoard.print_board_2(king_board)}")
+            enemies = self.get_w_attack_squares() if color == "black" else self.get_b_attack_squares()
+            if self.king_in_check(enemies, color):
+                moves.pop(i)
+            self.undo_move(board_to_move, move, board_to_clear)
+        return moves

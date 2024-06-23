@@ -123,7 +123,7 @@ while not exit:
     game.show_bg()
     if dragger.is_dragging:
         # print(type(dragger.piece_board))
-        dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history)
+        dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history, game)
         dragger.update_blit(game.surface)
     game.load(IMAGES)
     if promoting:
@@ -161,11 +161,6 @@ while not exit:
         if event.type == p.QUIT:
             exit = True
 
-        if game.iam_checked():
-            if not game.has_valid_moves(game.board, dragger):
-                print(f"{game.opponent()} wins!")
-                exit = True
-
 
         if event.type == p.MOUSEBUTTONDOWN:
             posX, posY = p.mouse.get_pos()
@@ -195,9 +190,17 @@ while not exit:
                     robot.choosing = False
                 old_idx = dragger.oldIdx
                 board_to_clear = game.get_proper_board(new_idx)
-                move = dragger.drag2(game.get_proper_board(old_idx), new_idx, game.get_current_player_board(), game.get_opponent_board(), game.history, board_to_clear)
+                board_to_move = game.get_proper_board(old_idx)
+                moves = dragger.get_pseudo_moves(board_to_move, new_idx, game.get_current_player_board(), game.get_opponent_board(), game.history, board_to_clear)
+                legal_moves = game.get_legal_moves(moves, game.current_turn())
+                move = None
+                for mv in legal_moves:
+                    if new_idx == mv.get_final_idx():
+                        move = mv
                 if move is None:
+                    dragger.undrag()
                     continue
+                dragger.drag2(game.get_proper_board(old_idx), move, board_to_clear)
                 move_type = move.get_move_type()
                 if move_type == MoveType.EN_PASSANT_CAPTURE:
                     if game.current_turn() == "white":
@@ -214,16 +217,18 @@ while not exit:
                 if move_type == MoveType.PROMOTE:
                     print('PLEASE PRINT')
                     promoting = True
-                    handle_promotion()
                 dragger.undrag()
                 game.history.append(move)
                 game.finish_turn()
+                if game.in_checkmate(game.current_turn()):
+                    print(f"{game.opponent()} wins!")
+                    exit = True
                 # undo move for invalid
         # Dragging motion
         elif event.type == p.MOUSEMOTION:
             if dragger.is_dragging:
                 game.show_bg()
-                dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history)
+                dragger.illuminate_moves(game.surface, game.get_current_player_board(), game.get_opponent_board(), game.history, game)
                 game.load(IMAGES)
                 dragger.update_mouse(p.mouse.get_pos())
                 dragger.update_blit(game.surface)

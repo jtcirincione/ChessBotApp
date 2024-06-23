@@ -34,16 +34,19 @@ class KingBoard(BitBoard):
         self.clear_bit(clrIdx)
         self.moved = True
 
-    def valid_moves(self, square):
+    def valid_moves(self, my_color_board, enemy_board, move_history):
         ## if king is moving to the right, apply A mask
         # Vice versa for left
         
-        valid_moves = np.uint64(0x0000000000000000)
+        board = self.board
+        ## if king is moving to the right, apply A mask
+        # Vice versa for left
+        valid_moves = np.uint64(0)
         for move in self.moves:
             if move > 0:
-                potential_move = (self.board << move)
+                potential_move = (board << np.uint64(move))
             else:
-                potential_move = (self.board >> -move)
+                potential_move = (board >> np.uint64(-move))
 
             if move == -1 or move == -9 or move == 7: ## if piece is moving to the right
                 potential_move &= FILE_A_MASK
@@ -51,6 +54,22 @@ class KingBoard(BitBoard):
                 potential_move &= FILE_H_MASK
 
             valid_moves |= potential_move
+            valid_moves &= ~my_color_board
+            ## Castling
+            if not self.moved:
+                castling_move = np.uint64(0)
+                occupied = my_color_board | enemy_board
+                if self.color == "white":
+                    if occupied & W_CASTLE_LEFT_MASK == 0:
+                        castling_move = self.board << np.uint64(2)
+                    if occupied & W_CASTLE_RIGHT_MASK == 0:
+                        castling_move = self.board >> np.uint64(2)
+                if self.color == "black":
+                    if occupied & B_CASTLE_LEFT_MASK == 0:
+                        castling_move = self.board << np.uint64(2)
+                    if occupied & B_CASTLE_RIGHT_MASK == 0:
+                        castling_move = self.board >> np.uint64(2)
+                valid_moves |= castling_move
         return valid_moves
     
     def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:

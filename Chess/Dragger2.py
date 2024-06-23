@@ -46,10 +46,10 @@ class Dragger2:
         img_center = (self.mouseX, self.mouseY)
         surface.blit(img, img.get_rect(center=img_center))
 
-    def illuminate_moves(self, surface, my_board, opp_board, move_history) -> None:
+    def illuminate_moves(self, surface, my_board, opp_board, move_history, game: GameState) -> None:
         _, moves = self.piece_board.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
-
-        for move in moves:
+        legals = game.get_legal_moves(moves, self.piece_board.color)
+        for move in legals:
             idx = move.get_final_idx()
             row, col = Move2.convert_idx_to_rc(idx)
             rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
@@ -90,9 +90,25 @@ class Dragger2:
                     board_to_clear.clear_bit(newIdx)
                 self.is_dragging = False
                 self.newIdx = newIdx
-                return valid_move
+                # return valid_move
         self.is_dragging = False
-        return valid_move
+        return moves
+    
+    def drag2(self, bitboard: BitBoard, move: Move2, board_to_clear: BitBoard=np.uint64):
+        newIdx = move.get_final_idx()
+        bitboard.move_piece(self.oldIdx, newIdx)
+        self.oldIdx = newIdx
+        if board_to_clear:
+            board_to_clear.clear_bit(newIdx)
+        self.is_dragging = False
+        self.newIdx = newIdx
+
+    ## Returns a list of pseudolegal moves
+    def get_pseudo_moves(self, bitboard: BitBoard, new_idx, my_board, opp_board, move_history, board_to_clear: BitBoard=np.uint64):
+        if not bitboard:
+            return None
+        _, moves = bitboard.attacking_squares(self.oldIdx, my_board, opp_board, move_history)
+        return moves
 
     ##TODO: instead of undragging for castling, find new way to check if rooks have moved
     def undo_drag(self, bitboard: BitBoard, move: Move2, board_to_set: BitBoard=np.uint64(0)):
@@ -180,3 +196,6 @@ class Dragger2:
 
     def get_moved_location(self) -> int:
         return self.newIdx
+    
+    def generate_all_valid_moves(self, game, new_idx, move_list: list[Move2]):
+        pass

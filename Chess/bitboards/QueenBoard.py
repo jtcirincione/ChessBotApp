@@ -41,8 +41,13 @@ class QueenBoard(BitBoard):
 
 
     
-    def valid_moves(self):
-        pass
+    def valid_moves(self, my_color_board, enemy_board, move_history):
+        attack_board = np.uint64(0)
+        for i in range(64):
+            if self.get_bit(i):
+                attack_board |= self.d_anti_moves(i, enemy_board | my_color_board) | self.h_v_moves(i, enemy_board | my_color_board) & ~my_color_board
+        return attack_board
+
 
     def attacking_squares(self, pieceIdx, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
         attack_board = (self.d_anti_moves(pieceIdx, enemy_board | my_color_board) | self.h_v_moves(pieceIdx, enemy_board | my_color_board)) & ~my_color_board

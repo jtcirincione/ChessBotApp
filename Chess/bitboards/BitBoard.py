@@ -254,11 +254,11 @@ class BitBoard(ABC):
         pass
 
     @abstractmethod
-    def valid_moves(self):
+    def valid_moves(self, my_color_board: np.uint64, enemy_board: np.uint64, move_history: list[Move2]):
         pass
 
     @abstractmethod
-    def attacking_squares(self, pieceIdx:int, my_color_board:'BitBoard', enemy_board:'BitBoard', move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
+    def attacking_squares(self, pieceIdx:int, my_color_board:np.uint64, enemy_board:np.uint64, move_history: list[Move2]) -> tuple[np.uint64, list[Move2]]:
         pass
 
     def move_piece(self, clrIdx, setIdx) -> None:
