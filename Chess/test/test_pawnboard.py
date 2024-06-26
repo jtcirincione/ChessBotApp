@@ -1,0 +1,29 @@
+from src.bitboards.PawnBoard import PawnBoard
+from src.bitboards.BitBoard import BitBoard
+import pytest, numpy as np
+
+@pytest.fixture
+def bboard():
+    return PawnBoard("black")
+
+def test_get_idx_of_lsb(bboard):
+    idx1, _ = bboard.get_idx_of_lsb(np.uint64(0b1000000000000000000000000000000000000000000000000000000000000001))
+    idx2, _ = bboard.get_idx_of_lsb(np.uint64(0b1000000000000000000000000000000000000000000000000000000011110001))
+    idx3, _ = bboard.get_idx_of_lsb(np.uint64(0b1000000000000000000000000000111100000000000000000000000000000001))
+    idx4, _ = bboard.get_idx_of_lsb(np.uint64(0b1000100000000000010000000000000000000100000000001000000000000001))
+    idx5, _ = bboard.get_idx_of_lsb(np.uint64(0b1000000000000000000000000000000000000000000000000000000000000000))
+    idx6, _ = bboard.get_idx_of_lsb(np.uint64(0b0111111111111110000000000000000000000000000000000000000000000000))
+    idx7, _ = bboard.get_idx_of_lsb(np.uint64(0b1000000000000000000011111111111111111111111111111111111111111100))
+    idx8, _ = bboard.get_idx_of_lsb(np.uint64(0b1011110000011110000000000000000111100000001000000000000000000000))
+    idx9, _ = bboard.get_idx_of_lsb(np.uint64(0b1111111111111111111111111111111111111111111000000000000000000000))
+    idx10, _= bboard.get_idx_of_lsb(np.uint64(0b0000000011111111000000000000000000000000000000000000000000000000))
+    assert idx1 ==63
+    assert idx2 ==63
+    assert idx3 ==63
+    assert idx4 ==63
+    assert idx5 ==0
+    assert idx6 == 14
+    assert idx7 == 61
+    assert idx8 == 42
+    assert idx9 == 42
+    assert idx10 == 15
