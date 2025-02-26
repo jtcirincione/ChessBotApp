@@ -47,6 +47,7 @@ illuminate_white = illuminate_black = False
 
 
 def main():
+    global exit
     while not exit:
         game.show_bg()
         game.load(IMAGES)

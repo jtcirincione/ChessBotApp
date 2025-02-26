@@ -4,8 +4,7 @@ import numpy as np
 
 
 class BitBoard():
-    def __init__(self, color: str, board: np.uint64, name: str):
-        self.color = color
+    def __init__(self, board: np.uint64, name: str=""): 
         self.board = board
         self.name = name
         self.file = self.set_file()
@@ -41,3 +40,8 @@ class BitBoard():
     def clear_bit(self, idx) -> None:
         bshift = np.uint64(63 - idx)
         self.board &= ~(np.uint64(1) << bshift)
+    
+    # prints board in readable way
+    def print(self):
+        pass
+        
