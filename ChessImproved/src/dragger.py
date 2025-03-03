@@ -32,7 +32,6 @@ class Dragger():
         self.is_dragging = False
 
     def update_pos(self, board: BitBoard, idx) -> None:
-        print("lskfdjlkdsfjslkdfjsdlkfjds")
         if not board:
             return
         if not board.get_bit(idx):

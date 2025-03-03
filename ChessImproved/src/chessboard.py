@@ -37,3 +37,9 @@ class Chessboard:
         return {
             key: val for key, val in self.bitboards.items() if key != "white_pieces" and key != "black_pieces" and key != "occupied"
         }
+
+    def precompute_knights(self):
+        pass
+
+    def mask_pawn_attacks(self):
+        pass
