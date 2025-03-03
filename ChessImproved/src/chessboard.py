@@ -19,7 +19,7 @@ class Chessboard:
 
     def __init__(self):
         self.bitboards = {
-            key: BitBoard(val) for key, val in STARTING_POSITIONS.items()
+            key: BitBoard(val, key) for key, val in STARTING_POSITIONS.items()
         }
         self.bitboards["white_pieces"] = BitBoard(np.uint64(0))
         for p in self.bitboards:
@@ -33,7 +33,7 @@ class Chessboard:
 
         self.bitboards["occupied"] = BitBoard(self.bitboards["white_pieces"].board | self.bitboards["black_pieces"].board)
 
-    def get_piece_boards(self) -> dict:
+    def get_piece_boards(self) -> dict[str, BitBoard]:
         return {
-            key: val for key, val in self.bitboards.items() if key != "white_pieces" and key != "black_pieces"
+            key: val for key, val in self.bitboards.items() if key != "white_pieces" and key != "black_pieces" and key != "occupied"
         }

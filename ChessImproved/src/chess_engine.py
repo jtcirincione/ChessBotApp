@@ -46,9 +46,27 @@ class GameState:
         else:
             pass
     
-    def get_proper_board(self, idx, white_turn):
-        for board in self.board.get_piece_boards().values():
+    def get_proper_board(self, idx, white_turn) -> BitBoard:
+        for key, board in self.board.get_piece_boards().items():
+            print(key)
             if board.get_bit(idx) == 1:
-                return board
+                print(f"I found a board {key}")
+                if white_turn and key.startswith("w"):
+                    return board
+                if not white_turn and key.startswith("b"):
+                    return board
             
-        return np.uint64(0)
+        return None
+
+    """
+    Moves piece. returns true on success.
+    """
+    def move(self, start, end, board_to_set, white_turn) -> bool:
+        print(f"start: {start}")
+        if not board_to_set: return False
+        board_to_clear = self.get_proper_board(end, not white_turn) # negate turn because we want opposite board to be captured
+        board_to_set.move_piece(start, end)
+        if board_to_clear:
+            print("errorrrr")
+            board_to_clear.clear_bit(end)
+        return True

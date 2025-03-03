@@ -12,6 +12,8 @@ class ChangeHandler(FileSystemEventHandler):
         self.restart()
 
     def on_any_event(self, event):
+        if "__pycache__" in event.src_path:
+            return
         if event.event_type in ('modified', 'created', 'deleted'):
             self.restart()
 
@@ -19,10 +21,11 @@ class ChangeHandler(FileSystemEventHandler):
         if self.process:
             self.process.terminate()
             self.process.wait()
+        time.sleep(2)  # Small delay to prevent rapid restarts
         self.process = subprocess.Popen([sys.executable, self.script])
 
 if __name__ == "__main__":
-    script_to_run = "ChessMain.py"  # Change this to your Pygame script
+    script_to_run = "main.py"  # Change this to your Pygame script
     event_handler = ChangeHandler(script_to_run)
     observer = Observer()
     observer.schedule(event_handler, path='.', recursive=True)
