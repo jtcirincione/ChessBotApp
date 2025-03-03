@@ -80,10 +80,8 @@ def main():
                         dragger.drag(new_idx)
                         white_turn = not white_turn
                     else:
-                        # dragger.piece.set_bit(dragger.old_idx)
+                        dragger.piece.set_bit(dragger.old_idx)
                         dragger.reset()
-                        print("failed")
-
 
 
         p.display.update()
