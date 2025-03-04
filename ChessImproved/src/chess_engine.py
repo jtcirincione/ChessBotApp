@@ -1,6 +1,7 @@
 from bitboards.BitBoard import BitBoard
 from chessboard import Chessboard
 import pygame, numpy as np
+from move import Move
 WIDTH = HEIGHT = 512
 # Dimensions of the board
 DIMENSION = ROWS = COLS = 8
@@ -11,6 +12,7 @@ class GameState:
     def __init__(self, surface):
         self.board = Chessboard()
         self.surface = surface
+        self.move_history: list[Move] = []
 
 
     """
@@ -65,4 +67,5 @@ class GameState:
         board_to_set.move_piece(start, end)
         if board_to_clear:
             board_to_clear.clear_bit(end)
+        self.move_history.append(Move(start, end, 0)) # TODO: change flag based on move type
         return True

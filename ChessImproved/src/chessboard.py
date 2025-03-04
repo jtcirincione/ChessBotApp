@@ -33,13 +33,21 @@ class Chessboard:
 
         self.bitboards["occupied"] = BitBoard(self.bitboards["white_pieces"].board | self.bitboards["black_pieces"].board)
 
+        self.KNIGHT_MOVES = [0] * 64
+        self.precompute_knights()
+
     def get_piece_boards(self) -> dict[str, BitBoard]:
         return {
             key: val for key, val in self.bitboards.items() if key != "white_pieces" and key != "black_pieces" and key != "occupied"
         }
 
     def precompute_knights(self):
-        pass
+        for i in range(64):
+            self.KNIGHT_MOVES[i] = self.generate_knight_moves(i)
+    
+    def generate_knight_moves(self, idx):
+        knight_move = np.uint64(0)
+        return knight_move
 
     def mask_pawn_attacks(self):
         pass
