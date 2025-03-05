@@ -74,6 +74,7 @@ def main():
                 if dragger.is_dragging:
                     posX, posY = p.mouse.get_pos()
                     new_idx = game.coord_to_idx(posX, posY)
+                    print(new_idx)
                     old_idx = dragger.get_old_idx()
                     move_success = game.move(old_idx, new_idx, dragger.piece, white_turn)
                     if move_success:

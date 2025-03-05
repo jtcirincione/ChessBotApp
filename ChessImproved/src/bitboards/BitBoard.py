@@ -9,13 +9,13 @@ class BitBoard():
     # the piece to the very end of the string.
     # and with 1 to return true if bit is there and false if not
     @staticmethod
-    def get_bit(board, idx) -> int:
+    def static_get_bit(board, idx) -> int:
         if not (0 <= idx < 64):
             raise Exception("Square must be from 0 to 63")
         return (board >> np.uint64(63 - idx)) & np.uint64(1)
     
     @staticmethod
-    def set_bit(board, idx: int) -> None:
+    def static_set_bit(board, idx: int) -> None:
         bshift = np.uint64(63 - idx)
         board |= (np.uint64(1) << bshift)
 
@@ -24,7 +24,7 @@ class BitBoard():
     # shifts 1 bit by bshift amount
     # negates shifted int then &'s with board to clear bit
     @staticmethod
-    def clear_bit(self, idx) -> None:
+    def static_clear_bit(self, idx) -> None:
         bshift = np.uint64(63 - idx)
         self.board &= ~(np.uint64(1) << bshift)
 

@@ -42,8 +42,8 @@ class GameState:
                 rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 pygame.draw.rect(self.surface, color, rect)
 
-    def show_valid_moves(self, whites_turn):
-        if whites_turn:
+    def show_valid_moves(self, white_turn):
+        if white_turn:
             pass
         else:
             pass
@@ -61,11 +61,17 @@ class GameState:
     """
     Moves piece. returns true on success.
     """
-    def move(self, start, end, board_to_set, white_turn) -> bool:
+    def move(self, start, end, board_to_set, white_turn, undo=False) -> bool:
         if not board_to_set: return False
         board_to_clear = self.get_proper_board(end, not white_turn) # negate turn because we want opposite board to be captured
-        board_to_set.move_piece(start, end)
-        if board_to_clear:
-            board_to_clear.clear_bit(end)
-        self.move_history.append(Move(start, end, 0)) # TODO: change flag based on move type
+        if not undo:
+            board_to_set.move_piece(start, end)
+            if board_to_clear:
+                board_to_clear.clear_bit(end)
+            self.move_history.append(Move(start, end, 0)) # TODO: change flag based on move type
+        else:
+            board_to_set.move_piece(end, start)
+            if board_to_clear:
+                board_to_clear.set_bit(end)
+            self.move_history.pop()
         return True
