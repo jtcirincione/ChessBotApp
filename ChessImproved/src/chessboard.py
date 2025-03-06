@@ -29,7 +29,7 @@ NOT_H_MASK = np.uint64(
     0b1111111011111110111111101111111011111110111111101111111011111110)
 
 """
-Starts from idx 63 at bottom right, goes down from right to left to 0 at top left
+Starts from idx 0 at bottom right, goes up from right to left to 63 at top left
 """
 class Chessboard:
     

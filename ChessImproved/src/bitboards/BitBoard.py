@@ -12,12 +12,12 @@ class BitBoard():
     def static_get_bit(board, idx) -> int:
         if not (0 <= idx < 64):
             raise Exception("Square must be from 0 to 63")
-        return (board >> np.uint64(63 - idx)) & np.uint64(1)
+        return (board >> np.uint64(idx)) & np.uint64(1)
     
     @staticmethod
     def static_set_bit(board, idx: int) -> None:
-        bshift = np.uint64(63 - idx)
-        board |= (np.uint64(1) << bshift)
+        board |= (np.uint64(1) << np.uint64(idx))
+        return board
 
     
     # Clears the bit at location idx
@@ -25,8 +25,7 @@ class BitBoard():
     # negates shifted int then &'s with board to clear bit
     @staticmethod
     def static_clear_bit(self, idx) -> None:
-        bshift = np.uint64(63 - idx)
-        self.board &= ~(np.uint64(1) << bshift)
+        self.board &= ~(np.uint64(1) << np.uint64(idx))
 
     def __init__(self, board: np.uint64, name: str=""): 
         self.board = board
@@ -46,7 +45,7 @@ class BitBoard():
     def get_bit(self, idx) -> int:
         if not (0 <= idx < 64):
             raise Exception("Square must be from 0 to 63")
-        return (self.board >> np.uint64(63 - idx)) & np.uint64(1)
+        return (self.board >> np.uint64(idx)) & np.uint64(1)
     
     def move_piece(self, clrIdx, setIdx) -> None:
         if not (0 <= setIdx < 64) or not (0 <= clrIdx < 64):
@@ -56,21 +55,21 @@ class BitBoard():
 
     def set_bit(self, idx: int) -> None:
         bshift = np.uint64(63 - idx)
-        self.board |= (np.uint64(1) << bshift)
+        self.board |= (np.uint64(1) << np.uint64(idx))
 
     # Clears the bit at location idx
     # shifts 1 bit by bshift amount
     # negates shifted int then &'s with board to clear bit
     def clear_bit(self, idx) -> None:
         bshift = np.uint64(63 - idx)
-        self.board &= ~(np.uint64(1) << bshift)
+        self.board &= ~(np.uint64(1) << np.uint64(idx))
     
     # prints board in readable way
     def print(self):
-        for rank in range(0, 8):
+        for rank in range(7, -1, -1):
             for file in range(0, 8):
                 if not file:
-                    print(8 - rank, end="  ")
+                    print(rank + 1, end="  ")
                 square = rank * 8 + file
                 print(self.get_bit(idx=square), end=" ")
             print()
