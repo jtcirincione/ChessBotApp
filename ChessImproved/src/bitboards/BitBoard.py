@@ -18,6 +18,59 @@ class BitBoard():
     def static_set_bit(board, idx: int) -> None:
         board |= (np.uint64(1) << np.uint64(idx))
         return board
+    
+    @staticmethod
+    def generate_rook_mask(idx):
+        mask = np.uint64(0)
+        rank = idx // 8
+        file = idx % 8
+
+        #vertical moves
+        for r in range(rank + 1, 7): # Exclude board edges
+            mask |= np.uint64(1) << np.uint64(r * 8 + file)
+        for r in range(rank - 1, 0, -1):  # Exclude board edges
+            mask |= np.uint64(1) << np.uint64(r * 8 + file)
+
+        #horizontal moves
+        for f in range(file + 1, 7):
+            mask |= np.uint64(1) << np.uint64(rank*8 + f)
+        for f in range (file -1, 0, -1):
+            mask |= np.uint64(1) << np.uint64(rank*8 + f)
+    
+        return mask
+    
+    @staticmethod
+    def generate_bishop_mask(idx):
+        mask = np.uint64(0)
+        rank = idx // 8
+        file = idx % 8
+        # Diagonal (↗ and ↙)
+        for i in range(1, 7):
+            if rank + i < 7 and file + i < 7:
+                mask |= np.uint64(1) << np.uint64((rank + i) * 8 + (file + i))
+            if rank - i > 0 and file - i > 0:
+                mask |= np.uint64(1) << np.uint64((rank - i) * 8 + (file - i))
+
+        # Anti-diagonal (↖ and ↘)
+        for i in range(1, 7):
+            if rank + i < 7 and file - i > 0:
+                mask |= np.uint64(1) << np.uint64((rank + i) * 8 + (file - i))
+            if rank - i > 0 and file + i < 7:
+                mask |= np.uint64(1) << np.uint64((rank - i) * 8 + (file + i))
+
+        return mask
+
+    @staticmethod
+    def static_print(board):
+        for rank in range(7, -1, -1):
+            for file in range(0, 8):
+                if not file:
+                    print(rank + 1, end="  ")
+                square = rank * 8 + file
+                print(BitBoard.static_get_bit(board, idx=square), end=" ")
+            print()
+        
+        print("\n   A B C D E F G H\n\n", end="")
 
     
     # Clears the bit at location idx

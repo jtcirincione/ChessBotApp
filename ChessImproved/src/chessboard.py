@@ -55,6 +55,8 @@ class Chessboard:
         self.KING_MOVES = [0] * 64
         self.precompute_knights()
         self.precompute_kings()
+        print("flkjdsalkdsfj: ")
+        BitBoard.static_print(BitBoard.generate_rook_mask(0))
 
     def get_piece_boards(self) -> dict[str, BitBoard]:
         return {

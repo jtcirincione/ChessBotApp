@@ -71,7 +71,7 @@ def generate_blocker_variations(mask: int):
     for i in range(2**num_bits):
         subset = np.uint64(0)
         for j in range(num_bits):
-            if (i & (1 << j)) != 0:
+            if (i & (np.uint64(1) << np.uint64(j))) != 0:
                 subset |= np.uint64(1) << np.uint64(bits[j])
         blockers.append(subset)
     

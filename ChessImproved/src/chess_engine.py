@@ -30,9 +30,9 @@ class GameState:
             for key, board in self.board.get_piece_boards().items():
                 if board.get_bit(i):
                     self.surface.blit(images[key], ((i % 8) * SQ_SIZE, (7 - (i // 8)) * SQ_SIZE))
-                    print(board.name)
-                    board.print()
-                    print()
+                    # print(board.name)
+                    # board.print()
+                    # print()
                     break
     
     def show_bg(self):
