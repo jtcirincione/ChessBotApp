@@ -17,7 +17,7 @@ class GameState:
 
     """
     Returns square index from 0-63.
-     0 top-left, 63 bottom right
+     0 bottom-left, 63 top-right
     """
     def coord_to_idx(self, posX: int, posY: int) -> tuple:
         x = posX // SQ_SIZE

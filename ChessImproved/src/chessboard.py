@@ -56,7 +56,7 @@ class Chessboard:
         self.precompute_knights()
         self.precompute_kings()
         print("flkjdsalkdsfj: ")
-        BitBoard.static_print(BitBoard.generate_rook_mask(0))
+        BitBoard.static_print(BitBoard.generate_bishop_mask(24))
 
     def get_piece_boards(self) -> dict[str, BitBoard]:
         return {
@@ -72,14 +72,14 @@ class Chessboard:
         board = np.uint64(0)
         BitBoard.static_set_bit(board, idx)
         moves = [
-            6,  # top right move restrict from A and B
-            15,  # top right move restrict from A
-            10,  # top left move, # restrict from G and H
-            17,  # top left move, # restrict from H
-            -6,  # bottom left move # restrict from G and H
-            -15,  # bottom left move # restrict from H
-            -10,  # bottom right move # restrict from A and B
-            -17  # bottom right move # restrict from B
+            6,  # top left move restrict from G and H
+            15,  # top left move restrict from H
+            10,  # top right move, # restrict from A and B
+            17,  # top right move, # restrict from A
+            -6,  # bottom right move # restrict from A and B
+            -15,  # bottom right move # restrict from A
+            -10,  # bottom left move # restrict from G and H
+            -17  # bottom left move # restrict from H
         ]
 
         for move in moves:
@@ -88,13 +88,13 @@ class Chessboard:
             else:
                 position = (board >> np.uint64(-move))
             if move == 6 or move == -10:
-                position &= NOT_AB_MASK
-            if move == 15 or move == -17:
-                position &= NOT_A_MASK
-            if move == 10 or move == -6:
                 position &= NOT_GH_MASK
-            if move == -15 or move == 17:
+            if move == 15 or move == -17:
                 position &= NOT_H_MASK
+            if move == 10 or move == -6:
+                position &= NOT_AB_MASK
+            if move == -15 or move == 17:
+                position &= NOT_A_MASK
             knight_move |= position
 
         return knight_move
@@ -128,12 +128,12 @@ class Chessboard:
         attack_squares = np.uint64(0)
         if white:
             pawns = self.bitboards['wp']
-            attack_squares |= (pawns << 9) & NOT_H_MASK ## left attack
-            attack_squares |= (pawns << 7) & NOT_A_MASK ## right attack
+            attack_squares |= (pawns << 9) & NOT_A_MASK ## right attack
+            attack_squares |= (pawns << 7) & NOT_H_MASK ## left attack
             attack_squares &= ~self.bitboards['white_pieces']
         else:
             pawns = self.bitboards['bp']
-            attack_squares |= (pawns >> 7) & NOT_H_MASK ## left attack
-            attack_squares |= (pawns >> 9) & NOT_A_MASK ## right attack
+            attack_squares |= (pawns >> 7) & NOT_A_MASK ## right attack
+            attack_squares |= (pawns >> 9) & NOT_H_MASK ## left attack
             attack_squares &= ~self.bitboards['black_pieces']
         return attack_squares
