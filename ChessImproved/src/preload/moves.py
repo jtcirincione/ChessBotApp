@@ -1,4 +1,21 @@
-import os, numpy as np
+import os, numpy as np, random, warnings, time
+
+def static_get_bit(board, idx) -> int:
+        if not (0 <= idx < 64):
+            raise Exception("Square must be from 0 to 63")
+        return (board >> np.uint64(idx)) & np.uint64(1)
+
+def static_print(board):
+        for rank in range(7, -1, -1):
+            for file in range(0, 8):
+                if not file:
+                    print(rank + 1, end="  ")
+                square = rank * 8 + file
+                print(static_get_bit(board, idx=square), end=" ")
+            print()
+        
+        print("\n   A B C D E F G H\n\n", end="")
+
 def generate_knight_moves():
     if os.path.exists(os.path.curdir.join("data/moves.pickle")):
         return
@@ -60,6 +77,11 @@ def generate_bishop_masks():
     return [generate_bishop_mask(idx) for idx in range(64)]
 
 
+ROOK_MASKS = generate_rook_masks()
+BISHOP_MASKS = generate_bishop_masks()
+for mask in ROOK_MASKS:
+    static_print(mask)
+
 
 def generate_blocker_variations(mask: int):
     """Generates all possible blocker variations within the attack mask."""
@@ -81,14 +103,13 @@ def generate_blocker_variations(mask: int):
 def compute_rook_attacks(square: int, blockers: int):
     """Computes actual attack set for a given blocker configuration."""
     attacks = 0
-
     rank = square // 8
     file = square % 8
 
     # Horizontal Moves
     for f in range(file + 1, 8):
-        attacks |= (1 << np.uint64(rank * 8 + f))
-        if blockers & (1 << np.uint64(rank * 8 + f)):  # Stop at blocker
+        attacks |= (np.uint64(1) << np.uint64(rank * 8 + f))
+        if blockers & (np.uint64(1) << np.uint64(rank * 8 + f)):  # Stop at blocker
             break
     for f in range(file - 1, -1, -1):
         attacks |= (np.uint64(1) << np.uint64(rank * 8 + f))
@@ -106,3 +127,135 @@ def compute_rook_attacks(square: int, blockers: int):
             break
 
     return attacks
+
+
+def compute_bishop_attacks(square: int, blockers: int):
+    """Computes actual attack set for a given blocker configuration."""
+    attacks = 0
+    rank = square // 8
+    file = square % 8
+
+    # Diagonal (↗ and ↙)
+    for r in range(1, 7):
+        if rank + r < 7 and file + r < 7:
+            attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r)))
+            if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r))):
+                break
+        if rank - r > 0 and file - r > 0:
+            attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r)))
+            if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r))):
+                break
+
+    # Anti-diagonal (↖ and ↘)
+    for r in range(1, 7):
+        if rank + r < 7 and file - r > 0:
+            attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r)))
+            if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r))):
+                break
+        if rank - r > 0 and file + r < 7:
+            attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r)))
+            if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r))):
+                break
+    print(f"Attack on square {square}: {static_print(attacks)}")
+    return attacks
+
+
+def find_magic_number(square, is_rook):
+    """
+    Finds a magic number for the given square for either rooks or bishops.
+    """
+
+    # Step 1: Generate mask for the piece
+    mask = ROOK_MASKS[square] if is_rook else BISHOP_MASKS[square]
+    print("finding magics")
+    # Step 2: Generate all possible blocker variations
+    blocker_variations = generate_blocker_variations(mask)
+    print("done generating blockers")
+    # Step 3: Compute all corresponding attack sets
+    attack_sets = {}
+    for blockers in blocker_variations:
+        attack = compute_rook_attacks(square, blockers) if is_rook else compute_bishop_attacks(square, blockers)
+        attack_sets[blockers] = attack
+
+    print("done computing attacks")
+    num_relevant_bits = bin(mask).count("1")  # Number of bits needed for unique indexing
+    print(bin(mask))
+    print(f"relevant bits: {num_relevant_bits}")
+    start_time = time.process_time()
+    # Step 4: Find a magic number by trial and error
+    while True:
+        magic = np.uint64(random.getrandbits(64) & random.getrandbits(64) & random.getrandbits(64))  # Random number with low bits cleared
+        lookup_table = {}
+
+        success = True
+        for blockers in blocker_variations:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                index = (blockers * magic) >> np.uint64(64 - num_relevant_bits)
+            if index in lookup_table and lookup_table[index] != attack_sets[blockers]:
+                collision_info = [(blockers, index)]
+                success = False
+                break
+            lookup_table[index] = attack_sets[blockers]
+        # if not success:
+        #     print(f"Collision at square {square}: magic {magic:#x}")
+        #     for blockers, index in collision_info:
+        #         print(f"  Blockers: {blockers} → Index: {index}")
+        if success:
+            end_time = time.process_time()
+            print(f"magic found for idx: {square} in {end_time - start_time} seconds")
+            return magic  # Found a working magic number
+
+def generate_all_magics():
+    # rook_magics = [find_magic_number(square, is_rook=True) for square in range(64)]
+    rook_magics = [0]
+    bishop_magics = [find_magic_number(square, is_rook=False) for square in range(64)]
+    return rook_magics, bishop_magics
+
+
+rook_magics, bishop_magics = generate_all_magics()
+
+rook_attack_table = {}
+bishop_attack_table = {}
+
+
+
+def generate_magic_lookup_table(is_rook):
+    """
+    Precomputes and stores all attack tables for rooks and bishops.
+    """
+    for square in range(64):
+        if not is_rook and str(square) not in bishop_attack_table:
+            bishop_attack_table[str(square)] = {}
+        if is_rook and str(square) not in rook_attack_table:
+            rook_attack_table[str(square)] = {}
+        magic = rook_magics[square] if is_rook else bishop_magics[square]
+        mask = ROOK_MASKS[square] if is_rook else BISHOP_MASKS[square]
+        blocker_variations = generate_blocker_variations(mask)
+
+        for blockers in blocker_variations:
+            attack = compute_rook_attacks(square, blockers) if is_rook else compute_bishop_attacks(square, blockers)
+            index = (blockers * magic) >> np.uint64(64 - len(blocker_variations).bit_length())  # Magic hash
+            if is_rook:
+                rook_attack_table[str(square)][str(index)] = attack
+            else:
+                bishop_attack_table[str(square)][str(index)] = attack
+
+
+
+def get_rook_attacks(square, blockers):
+    """Retrieves rook attacks using magic bitboards."""
+    magic = rook_magics[square]
+    mask = ROOK_MASKS[square]
+    relevant_blockers = np.uint64(blockers) & mask  # Only consider relevant blockers
+    index = (relevant_blockers * magic) >> np.uint64(64 - len(rook_attack_table[str(square)]).bit_length())
+    return rook_attack_table[str(square)][str(index)]
+
+def get_bishop_attacks(square, blockers):
+    """Retrieves bishop attacks using magic bitboards."""
+    magic = bishop_magics[square]
+    mask = BISHOP_MASKS[square]
+    print(f"mask: {static_print(mask)}")
+    relevant_blockers = np.uint64(blockers) & mask  # Only consider relevant blockers
+    index = (relevant_blockers * magic) >> np.uint64(64 - len(bishop_attack_table[str(square)]).bit_length())
+    return bishop_attack_table[str(square)][str(index)]
