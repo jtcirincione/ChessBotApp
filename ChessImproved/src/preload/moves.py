@@ -1,4 +1,6 @@
-import os, numpy as np, random, warnings, time
+import os, numpy as np, random, warnings, time, json
+
+filename = "magics.json"
 
 def static_get_bit(board, idx) -> int:
         if not (0 <= idx < 64):
@@ -79,9 +81,8 @@ def generate_bishop_masks():
 
 ROOK_MASKS = generate_rook_masks()
 BISHOP_MASKS = generate_bishop_masks()
-for mask in ROOK_MASKS:
-    static_print(mask)
-
+# for mask in ROOK_MASKS:
+#     static_print(mask)
 
 def generate_blocker_variations(mask: int):
     """Generates all possible blocker variations within the attack mask."""
@@ -93,7 +94,7 @@ def generate_blocker_variations(mask: int):
     for i in range(2**num_bits):
         subset = np.uint64(0)
         for j in range(num_bits):
-            if (i & (np.uint64(1) << np.uint64(j))) != 0:
+            if (np.uint64(i) & (np.uint64(1) << np.uint64(j))) != 0:
                 subset |= np.uint64(1) << np.uint64(bits[j])
         blockers.append(subset)
     
@@ -136,27 +137,27 @@ def compute_bishop_attacks(square: int, blockers: int):
     file = square % 8
 
     # Diagonal (↗ and ↙)
-    for r in range(1, 7):
-        if rank + r < 7 and file + r < 7:
+    for r in range(1, 8):
+        if rank + r < 8 and file + r < 8:
             attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r)))
             if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r))):
                 break
-        if rank - r > 0 and file - r > 0:
+        if rank - r >= 0 and file - r >= 0:
             attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r)))
             if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r))):
                 break
 
     # Anti-diagonal (↖ and ↘)
-    for r in range(1, 7):
-        if rank + r < 7 and file - r > 0:
+    for r in range(1, 8):
+        if rank + r < 8 and file - r >= 0:
             attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r)))
             if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r))):
                 break
-        if rank - r > 0 and file + r < 7:
+        if rank - r >= 0 and file + r < 8:
             attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r)))
             if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r))):
                 break
-    print(f"Attack on square {square}: {static_print(attacks)}")
+    # print(f"Attack on square {square}: {static_print(attacks)}")
     return attacks
 
 
@@ -207,13 +208,29 @@ def find_magic_number(square, is_rook):
             return magic  # Found a working magic number
 
 def generate_all_magics():
-    # rook_magics = [find_magic_number(square, is_rook=True) for square in range(64)]
-    rook_magics = [0]
+    rook_magics = [find_magic_number(square, is_rook=True) for square in range(64)]
+    # rook_magics = [0]
     bishop_magics = [find_magic_number(square, is_rook=False) for square in range(64)]
     return rook_magics, bishop_magics
 
+if not os.path.exists(os.path.join(os.curdir, "preload/data/magics.json")):
+    rook_magics, bishop_magics = generate_all_magics()
+    rook_magics_hex = [hex(magic) for magic in rook_magics]
+    bishop_magics_hex = [hex(magic) for magic in bishop_magics]
 
-rook_magics, bishop_magics = generate_all_magics()
+    # Saving to JSON
+    with open("preload/data/magics.json", 'w') as f:
+        json.dump({
+            "rook_magics": rook_magics_hex,
+            "bishop_magics": bishop_magics_hex
+        }, f, indent=4)
+else:
+    with open("preload/data/magics.json", 'r') as f:
+        tables = json.load(f)
+
+    # Convert hex strings back to np.uint64
+    rook_magics = [np.uint64(int(magic, 16)) for magic in tables['rook_magics']]
+    bishop_magics = [np.uint64(int(magic, 16)) for magic in tables['bishop_magics']]
 
 rook_attack_table = {}
 bishop_attack_table = {}
@@ -235,7 +252,9 @@ def generate_magic_lookup_table(is_rook):
 
         for blockers in blocker_variations:
             attack = compute_rook_attacks(square, blockers) if is_rook else compute_bishop_attacks(square, blockers)
-            index = (blockers * magic) >> np.uint64(64 - len(blocker_variations).bit_length())  # Magic hash
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                index = (blockers * magic) >> np.uint64(64 - len(blocker_variations).bit_length())  # Magic hash
             if is_rook:
                 rook_attack_table[str(square)][str(index)] = attack
             else:
@@ -255,7 +274,15 @@ def get_bishop_attacks(square, blockers):
     """Retrieves bishop attacks using magic bitboards."""
     magic = bishop_magics[square]
     mask = BISHOP_MASKS[square]
-    print(f"mask: {static_print(mask)}")
+    # print(f"mask: {static_print(mask)}")
     relevant_blockers = np.uint64(blockers) & mask  # Only consider relevant blockers
     index = (relevant_blockers * magic) >> np.uint64(64 - len(bishop_attack_table[str(square)]).bit_length())
     return bishop_attack_table[str(square)][str(index)]
+
+def get_queen_attacks(square, blockers):
+    diagonals = get_bishop_attacks(square, blockers)
+    nsew = get_rook_attacks(square, blockers)
+    return diagonals | nsew
+
+generate_magic_lookup_table(False)
+generate_magic_lookup_table(True)

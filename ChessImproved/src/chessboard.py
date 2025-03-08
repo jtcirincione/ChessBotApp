@@ -1,5 +1,5 @@
 from bitboards.BitBoard import BitBoard
-import preload.moves as magics
+from preload.moves import get_queen_attacks, get_rook_attacks, get_bishop_attacks
 import numpy as np
 STARTING_POSITIONS = {
     "wp":  np.uint64(0b0000000000000000000000000000000000000000000000001111111100000000),
@@ -58,9 +58,7 @@ class Chessboard:
         self.precompute_kings()
         print("flkjdsalkdsfj: ")
         # BitBoard.static_print(BitBoard.generate_bishop_mask(24))
-        magics.generate_magic_lookup_table(False)
-        # magics.generate_magic_lookup_table(True)
-        BitBoard.static_print(magics.get_bishop_attacks(0, 0))
+        # BitBoard.static_print(magics.get_queen_attacks(0, 0))
 
     def get_piece_boards(self) -> dict[str, BitBoard]:
         return {
