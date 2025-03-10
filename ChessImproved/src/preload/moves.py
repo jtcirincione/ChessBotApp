@@ -1,5 +1,10 @@
 import os, numpy as np, random, warnings, time, json
 
+NOT_A_MASK = np.uint64(
+    0b0111111101111111011111110111111101111111011111110111111101111111)
+NOT_H_MASK = np.uint64(
+    0b1111111011111110111111101111111011111110111111101111111011111110)
+
 filename = "magics.json"
 
 def static_get_bit(board, idx) -> int:
@@ -159,6 +164,29 @@ def compute_bishop_attacks(square: int, blockers: int):
                 break
     # print(f"Attack on square {square}: {static_print(attacks)}")
     return attacks
+
+
+def compute_pawn_attacks():
+    """
+    Returns a tuple (white, black) of precomputed white and black pawn attacks
+    white: array where idx is the square for white attack
+    black: array where idx is the square for black attack
+    """
+    whites = []
+    blacks = []
+    for square in range(64):
+        wattack_squares = np.uint64(0)
+        battack_squares = np.uint64(0)
+        pawn = np.uint64(np.uint64(1) << np.uint64(square))
+        wattack_squares |= (pawn << 9) & NOT_A_MASK ## right attack
+        wattack_squares |= (pawn << 7) & NOT_H_MASK ## left attack
+
+        battack_squares |= (pawn >> 7) & NOT_A_MASK ## right attack
+        battack_squares |= (pawn >> 9) & NOT_H_MASK ## left attack
+
+        whites.append(wattack_squares)
+        blacks.append(battack_squares)
+        return whites, blacks
 
 
 def find_magic_number(square, is_rook):

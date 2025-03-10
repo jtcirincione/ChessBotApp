@@ -42,7 +42,7 @@ class Dragger():
         board.clear_bit(idx)
     
     def reset(self):
-        self.dragging = False
+        self.is_dragging = False
         self.piece = None
         self.mouseX = -100
         self.mouseY = -100

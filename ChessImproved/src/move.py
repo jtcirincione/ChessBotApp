@@ -44,6 +44,29 @@ _______________________________________________________________
 _______________________________________________________________
 """
 class Move:
+    QUIET = 0
+    DOUBLE_PAWN_PUSH = 1
+    KING_CASTLE = 2
+    QUEEN_CASTLE = 3
+    CAPTURE = 4
+    KNIGHT_PROMO = 8
+    BISHOP_PROMO = 9
+    ROOK_PROMO = 10
+    QUEEN_PROMO = 11
+    KNIGHT_CAP_PROMO = 12
+    BISHOP_CAP_PROMO = 13
+    ROOK_CAP_PROMO = 14
+    QUEEN_CAP_PROMO = 15
+    
+    @staticmethod
+    def get_move_type(board_to_set, board_to_clear, start, end):
+        move_flags = np.uint16(0)
+        if board_to_clear is not None:
+            move_flags |= np.uint16(1 << 2) # set capture bit
+        
+        return 1
+
+
     def __init__(self, frum: np.uint, to, flags):
         self.move = (np.uint16(flags) << 12) | (np.uint16(to) << 6) | (np.uint16(frum))
     

@@ -80,10 +80,17 @@ class BitBoard():
     def static_clear_bit(self, idx) -> None:
         self.board &= ~(np.uint64(1) << np.uint64(idx))
 
+    @staticmethod
+    def bit_scan_forward(bitboard: np.uint64) -> int:
+        """Returns the index of the least significant bit (LSB) in the bitboard."""
+        bitboard: int = int(bitboard)  # Convert to Python int to avoid overflow
+        return (bitboard & -bitboard).bit_length() - 1
+
     def __init__(self, board: np.uint64, name: str=""): 
         self.board = board
         self.name = name
         self.file = self.set_file()
+        self.color = "white" if name.startswith("w") else "black"
 
     def set_file(self) -> str:
         path = os.path.abspath(os.path.dirname(__file__))

@@ -51,27 +51,70 @@ class GameState:
         else:
             pass
     
-    def get_proper_board(self, idx, white_turn) -> BitBoard:
+    def get_proper_board(self, idx) -> BitBoard:
         for key, board in self.board.get_piece_boards().items():
             if board.get_bit(idx) == 1:
-                if white_turn and key.startswith("w"):
-                    return board
-                if not white_turn and key.startswith("b"):
-                    return board
-            
+                return board          
         return None
+    
+    def get_pseudolegal_moves(self, white_turn) -> list[Move]:
+        moves = []
+        moves.extend(self.board.get_bishop_moves(white_turn))
+        moves.extend(self.board.get_rook_moves(white_turn))
+        moves.extend(self.board.get_queen_moves(white_turn))
+        moves.extend(self.board.get_pawn_moves(white_turn))
+        moves.extend(self.board.get_knight_moves(white_turn))
+        moves.extend(self.board.get_king_moves(white_turn))
+
+        return moves
+
+    def last_move_valid(self, white_moved_last) -> bool:
+        prev_move = self.move_history[-1]
+        
+        # 1. is my king in check
+        if white_moved_last:
+            pass
+        else:
+            pass
+
+        # 2. check if move is a castle
+        pass
+
+    def get_valid_moves(self, white_turn) -> list[Move]:
+        """
+        generates pseudolegal moves and tries each move to check validity
+        """
+        pseudo_moves: list[Move] = self.get_pseudolegal_moves(white_turn)
+        legal_moves = []
+        for move in pseudo_moves:
+            from_idx = move.get_from_idx()
+            to_idx = move.get_to_idx()
+            bboard_to_move = self.get_proper_board(from_idx)
+            self.move(piece=bboard_to_move, start=from_idx, end=to_idx)
+            if self.last_move_valid(white_turn) == True:
+                legal_moves.append(move)
+            self.move(piece=bboard_to_move, start=from_idx, end=to_idx, undo=True)
+
+        return legal_moves
 
     """
     Moves piece. returns true on success.
     """
-    def move(self, start, end, board_to_set, white_turn, undo=False) -> bool:
-        if not board_to_set: return False
-        board_to_clear = self.get_proper_board(end, not white_turn) # negate turn because we want opposite board to be captured
+    def move(self, piece, start, end, undo=False) -> bool:
+        board_to_set: BitBoard = piece
+        board_to_clear = self.get_proper_board(end)
+        if not board_to_set or start == end: return False
+        color = "white" if board_to_set.color == "white" else "black"
+        if board_to_clear and (board_to_clear.color == color): return False
+        
         if not undo:
+            move_type = Move.get_move_type(board_to_set, board_to_clear, start, end)
+            move = Move(start, end, move_type)
+            white_turn = True if color == "white" else False
             board_to_set.move_piece(start, end)
             if board_to_clear:
                 board_to_clear.clear_bit(end)
-            self.move_history.append(Move(start, end, 0)) # TODO: change flag based on move type
+            self.move_history.append(move)
         else:
             board_to_set.move_piece(end, start)
             if board_to_clear:

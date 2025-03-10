@@ -67,8 +67,11 @@ def main():
             if event.type == p.MOUSEBUTTONDOWN:
                 posX, posY = p.mouse.get_pos()
                 idx = game.coord_to_idx(posX, posY)
-                dragger.update_pos(game.get_proper_board(idx, white_turn), idx)
-                dragger.update_mouse(p.mouse.get_pos())
+                board = game.get_proper_board(idx)
+                print(board.color)
+                if (board.color == "white" and white_turn) or (board.color == "black" and not white_turn):
+                    dragger.update_pos(board, idx)
+                    dragger.update_mouse(p.mouse.get_pos())
 
             if event.type == p.MOUSEBUTTONUP:
                 if dragger.is_dragging:
@@ -76,11 +79,12 @@ def main():
                     new_idx = game.coord_to_idx(posX, posY)
                     print(new_idx)
                     old_idx = dragger.get_old_idx()
-                    move_success = game.move(old_idx, new_idx, dragger.piece, white_turn)
+                    move_success = game.move(dragger.piece, old_idx, new_idx)
                     if move_success:
                         dragger.drag(new_idx)
                         white_turn = not white_turn
                     else:
+                        print('failed')
                         dragger.piece.set_bit(dragger.old_idx)
                         dragger.reset()
 
