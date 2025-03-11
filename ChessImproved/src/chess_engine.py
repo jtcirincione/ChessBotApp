@@ -78,20 +78,34 @@ class GameState:
         if king_bboard & all_attacks > 0: return False # if king is on an attacked square move is invalid
 
         # 2. check if move is a castle
+        castle_idx = 4 if white_moved_last else 60
         if prev_move.get_move_type() == Move.KING_CASTLE:
+            RIGHT_ROOK = 7 if white_moved_last else 63
             # to do this we need to: 1. check if the 2 squares to the right of the king are occupied
-            # 2. ckeck if the 2 squares right of the king are under attack
+            if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << RIGHT_ROOK) <= 0:
+                return False # FALSE bc we can't see our right rook ( we treat our king as the enemy here so our rook isn't masked out)
+            # 2. check if the 2 squares right of the king are under attack
+            if (all_attacks & np.uint64(1 << castle_idx + 1) > 0) or (all_attacks & np.uint64(1 << castle_idx + 2)) > 0:
+                return False # False as one of or both of these squares are under attack
             # 3. check if the king/right rook have been moved by searching through the move history
-            # return false if any are true
-            
-            pass
+            for move in self.move_history:
+                if move.get_from_idx() == castle_idx or move.get_from_idx() == RIGHT_ROOK:
+                    return False
+
         if prev_move.get_move_type == Move.QUEEN_CASTLE:
+            LEFT_ROOK = 0 if white_moved_last else 56
             # to do this we need to: 1. check if the 3 squares to the left of the king are occupied
+            if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << LEFT_ROOK) <= 0:
+                return False # FALSE bc we can't see our right rook ( we treat our king as the enemy here so our rook isn't masked out)
             # 2. ckeck if the 2 squares left of the king are under attack
+            if (all_attacks & np.uint64(1 << castle_idx - 1) > 0) or (all_attacks & np.uint64(1 << castle_idx - 2)) > 0:
+                return False # False as one of or both of these squares are under attack
             # 3. check if the king/left rook have been moved by searching through the move history
-            # return false if any are true
-            pass
-        pass
+            for move in self.move_history:
+                if move.get_from_idx() == castle_idx or move.get_from_idx() == LEFT_ROOK:
+                    return False
+
+        return True
 
     def get_valid_moves(self, white_turn) -> list[Move]:
         """
