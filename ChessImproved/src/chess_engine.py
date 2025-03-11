@@ -68,16 +68,29 @@ class GameState:
 
         return moves
 
-    def last_move_valid(self, white_moved_last) -> bool:
+    def last_move_valid(self, moved_piece, white_moved_last) -> bool:
         prev_move = self.move_history[-1]
+        occupancy = self.board.get_occupancy_board()
         
         # 1. is my king in check
-        if white_moved_last:
-            pass
-        else:
-            pass
+        all_attacks = self.board.get_all_attack_squares(occupancy, white_moved_last)
+        king_bboard = self.board.bitboards["wK" if white_moved_last else "bK"].board
+        if king_bboard & all_attacks > 0: return False # if king is on an attacked square move is invalid
 
         # 2. check if move is a castle
+        if prev_move.get_move_type() == Move.KING_CASTLE:
+            # to do this we need to: 1. check if the 2 squares to the right of the king are occupied
+            # 2. ckeck if the 2 squares right of the king are under attack
+            # 3. check if the king/right rook have been moved by searching through the move history
+            # return false if any are true
+            
+            pass
+        if prev_move.get_move_type == Move.QUEEN_CASTLE:
+            # to do this we need to: 1. check if the 3 squares to the left of the king are occupied
+            # 2. ckeck if the 2 squares left of the king are under attack
+            # 3. check if the king/left rook have been moved by searching through the move history
+            # return false if any are true
+            pass
         pass
 
     def get_valid_moves(self, white_turn) -> list[Move]:
@@ -87,29 +100,28 @@ class GameState:
         pseudo_moves: list[Move] = self.get_pseudolegal_moves(white_turn)
         legal_moves = []
         for move in pseudo_moves:
-            from_idx = move.get_from_idx()
-            to_idx = move.get_to_idx()
-            bboard_to_move = self.get_proper_board(from_idx)
-            self.move(piece=bboard_to_move, start=from_idx, end=to_idx)
-            if self.last_move_valid(white_turn) == True:
+            bboard_to_move = self.get_proper_board(move.get_from_idx())
+            self.move(piece=bboard_to_move, move=move)
+            if self.last_move_valid(bboard_to_move, white_turn) == True:
                 legal_moves.append(move)
-            self.move(piece=bboard_to_move, start=from_idx, end=to_idx, undo=True)
+            self.move(piece=bboard_to_move, move=move, undo=True)
 
         return legal_moves
 
     """
     Moves piece. returns true on success.
     """
-    def move(self, piece, start, end, undo=False) -> bool:
+    def move(self, piece, move:Move, undo=False) -> bool:
         board_to_set: BitBoard = piece
+        start = move.get_from_idx()
+        end = move.get_to_idx()
+
         board_to_clear = self.get_proper_board(end)
         if not board_to_set or start == end: return False
         color = "white" if board_to_set.color == "white" else "black"
         if board_to_clear and (board_to_clear.color == color): return False
         
         if not undo:
-            move_type = Move.get_move_type(board_to_set, board_to_clear, start, end)
-            move = Move(start, end, move_type)
             white_turn = True if color == "white" else False
             board_to_set.move_piece(start, end)
             if board_to_clear:

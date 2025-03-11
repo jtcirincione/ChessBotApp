@@ -80,7 +80,10 @@ class Chessboard:
         return occupancy
 
     def get_occupancy_board(self):
-        return self.get_color_board(True) | self.get_color_board(False)
+        occupancy = np.uint64(0)
+        for p in self.bitboards:
+            occupancy |= self.bitboards[p].board
+        return occupancy
 
     def precompute_knights(self):
         for i in range(64):
@@ -176,6 +179,46 @@ class Chessboard:
     
     def get_queen_attacks(self, idx, blockers, white_turn):
         return get_queen_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces
+    
+    def get_all_attack_squares(self, blockers, white_turn):
+        attacks = np.uint64(0)
+        bishop_board = self.bitboards['wB' if white_turn else 'bB']
+        rook_board = self.bitboards['wR' if white_turn else 'bR']
+        queen_board = self.bitboards['wQ' if white_turn else 'b']
+        pawn_board = self.bitboards['wB' if white_turn else 'bB']
+        knight_board = self.bitboards['wN' if white_turn else 'bN']
+        king_board = self.bitboards['wK' if white_turn else 'bK']
+
+        enemy_pieces = self.get_color_board(not white_turn)
+        friendlies = self.get_color_board(white_turn)
+
+        while bishop_board:
+            idx = BitBoard.bit_scan_forward(bishop_board)
+            attacks |= self.get_bishop_attacks(idx, blockers, white_turn)
+            bishop_board &= bishop_board - 1
+        while rook_board:
+            idx = BitBoard.bit_scan_forward(rook_board)
+            attacks |= self.get_rook_attacks(idx, blockers, white_turn)
+            rook_board &= rook_board - 1
+        while queen_board:
+            idx = BitBoard.bit_scan_forward(queen_board)
+            attacks |= self.get_queen_attacks(idx, blockers, white_turn)
+            queen_board &= queen_board - 1
+        while pawn_board:
+            idx = BitBoard.bit_scan_forward(pawn_board)
+            attacks |= self.get_pawn_attacks(idx, white_turn) & enemy_pieces
+            pawn_board &= pawn_board - 1
+        while knight_board:
+            idx = BitBoard.bit_scan_forward(knight_board)
+            attacks |= self.KNIGHT_MOVES[idx] & ~friendlies
+            knight_board &= knight_board - 1
+        while king_board:
+            idx = BitBoard.bit_scan_forward(king_board)
+            attacks |= self.KING_MOVES[idx] & ~friendlies
+            king_board &= king_board - 1
+
+
+
     
     def get_pawn_moves(self, white_turn):
         #TODO: handle EP moves
@@ -277,7 +320,7 @@ class Chessboard:
         moves = []
         knight_board = self.bitboards['wN' if white_turn else 'bN']
         occupancy = self.get_occupancy_board()
-        enemy_pieces = self.get_color_board(white_turn)
+        enemy_pieces = self.get_color_board(not white_turn)
 
         while knight_board:
             from_idx = BitBoard.bit_scan_forward(knight_board)
@@ -299,7 +342,7 @@ class Chessboard:
     def get_king_moves(self, white_turn):
         king_board = self.bitboards['wK' if white_turn else 'bK']
         occupancy = self.get_occupancy_board()
-        enemy_pieces = self.get_color_board(white_turn)
+        enemy_pieces = self.get_color_board(not white_turn)
         moves = []
 
 
@@ -316,6 +359,16 @@ class Chessboard:
             to_idx = BitBoard.bit_scan_forward(king_quiets)
             moves.append(Move(from_idx, to_idx, Move.QUIET))
             king_quiets &= king_quiets - 1
+
+        # castling
+        castle_idx = 4 if white_turn else 60
+        if king_board == castle_idx:
+            # queen side castle
+            to_idx = 2 if white_turn else 58
+            moves.append(Move(from_idx, to_idx, Move.QUEEN_CASTLE))
+            # king side castle
+            to_idx = 6 if white_turn else 62
+            moves.append(Move(from_idx, to_idx, Move.KING_CASTLE))
 
         return moves
 

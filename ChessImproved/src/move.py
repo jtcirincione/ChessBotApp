@@ -49,6 +49,7 @@ class Move:
     KING_CASTLE = 2
     QUEEN_CASTLE = 3
     CAPTURE = 4
+    EP_CAPTURE = 5
     KNIGHT_PROMO = 8
     BISHOP_PROMO = 9
     ROOK_PROMO = 10
@@ -74,10 +75,13 @@ class Move:
         return self.move
     
     def get_from_idx(self):
-        return self.move & 0x3F
+        return np.uint64(self.move & 0x3F)
     
     def get_to_idx(self):
-        return (self.move >> 6) & 0x3F
+        return np.uint64((self.move >> 6) & 0x3F)
+    
+    def get_flags(self):
+        return np.uint64(self.move >> 12)
 
     def print_move(self):
         print(f"encoded: {self.move}")
