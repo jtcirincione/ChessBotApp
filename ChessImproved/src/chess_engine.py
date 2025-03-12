@@ -79,7 +79,7 @@ class GameState:
 
         # 2. check if move is a castle
         castle_idx = 4 if white_moved_last else 60
-        if prev_move.get_move_type() == Move.KING_CASTLE:
+        if prev_move.get_flags() == Move.KING_CASTLE:
             RIGHT_ROOK = 7 if white_moved_last else 63
             # to do this we need to: 1. check if the 2 squares to the right of the king are occupied
             if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << RIGHT_ROOK) <= 0:
@@ -92,7 +92,7 @@ class GameState:
                 if move.get_from_idx() == castle_idx or move.get_from_idx() == RIGHT_ROOK:
                     return False
 
-        if prev_move.get_move_type == Move.QUEEN_CASTLE:
+        if prev_move.get_flags() == Move.QUEEN_CASTLE:
             LEFT_ROOK = 0 if white_moved_last else 56
             # to do this we need to: 1. check if the 3 squares to the left of the king are occupied
             if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << LEFT_ROOK) <= 0:
@@ -115,22 +115,23 @@ class GameState:
         legal_moves = []
         for move in pseudo_moves:
             bboard_to_move = self.get_proper_board(move.get_from_idx())
-            self.move(piece=bboard_to_move, move=move)
+            bboard_to_clear = self.get_proper_board(move.get_to_idx())
+            self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move)
             if self.last_move_valid(bboard_to_move, white_turn) == True:
                 legal_moves.append(move)
-            self.move(piece=bboard_to_move, move=move, undo=True)
+            self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move, undo=True)
 
+        print(f"there are {len(legal_moves)} for current board configuration")
         return legal_moves
 
     """
     Moves piece. returns true on success.
     """
-    def move(self, piece, move:Move, undo=False) -> bool:
-        board_to_set: BitBoard = piece
+    def move(self, board_to_move, board_to_clear, move:Move, undo=False) -> bool:
+        board_to_set: BitBoard = board_to_move
         start = move.get_from_idx()
         end = move.get_to_idx()
 
-        board_to_clear = self.get_proper_board(end)
         if not board_to_set or start == end: return False
         color = "white" if board_to_set.color == "white" else "black"
         if board_to_clear and (board_to_clear.color == color): return False

@@ -186,7 +186,7 @@ def compute_pawn_attacks():
 
         whites.append(wattack_squares)
         blacks.append(battack_squares)
-        return whites, blacks
+    return whites, blacks
 
 
 def find_magic_number(square, is_rook):

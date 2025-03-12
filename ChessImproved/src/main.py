@@ -1,6 +1,7 @@
 import pygame as p, os
 from chess_engine import GameState
 from dragger import Dragger
+from move import Move
 
 
 # Size of board
@@ -51,6 +52,7 @@ def main():
     while not exit:
         game.show_bg()
         game.load(IMAGES)
+        
         if dragger.is_dragging:
             game.show_valid_moves(white_turn)
             dragger.update_mouse(p.mouse.get_pos())
@@ -79,7 +81,15 @@ def main():
                     new_idx = game.coord_to_idx(posX, posY)
                     print(new_idx)
                     old_idx = dragger.get_old_idx()
-                    move_success = game.move(dragger.piece, old_idx, new_idx)
+                    board_to_clear = game.get_proper_board(new_idx)
+                    move_success = False
+                    valid_moves = game.get_valid_moves(white_turn)
+                    for move in valid_moves:
+                        print(f"from: {move.get_from_idx()}")
+                        if move.get_from_idx() == old_idx and move.get_to_idx() == new_idx:
+                            print("lfdksfjslkfjsdlkfajsdlfkasjdflkasdjf")
+                            move_success = game.move(dragger.piece, board_to_clear, move, False)
+                            break
                     if move_success:
                         dragger.drag(new_idx)
                         white_turn = not white_turn
