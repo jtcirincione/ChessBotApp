@@ -49,12 +49,13 @@ illuminate_white = illuminate_black = False
 
 def main():
     global exit, white_turn
+    valid_moves = []
     while not exit:
         game.show_bg()
         game.load(IMAGES)
         
         if dragger.is_dragging:
-            game.show_valid_moves(white_turn)
+            game.show_valid_moves(valid_moves)
             dragger.update_mouse(p.mouse.get_pos())
             dragger.update_blit(game.surface)
 
@@ -70,10 +71,12 @@ def main():
                 posX, posY = p.mouse.get_pos()
                 idx = game.coord_to_idx(posX, posY)
                 board = game.get_proper_board(idx)
-                print(board.color)
-                if (board.color == "white" and white_turn) or (board.color == "black" and not white_turn):
+                if board and ((board.color == "white" and white_turn) or (board.color == "black" and not white_turn)):
                     dragger.update_pos(board, idx)
                     dragger.update_mouse(p.mouse.get_pos())
+                    dragger.piece.set_bit(dragger.old_idx) #TEMPORARY
+                    valid_moves = game.get_valid_moves(white_turn)
+                    dragger.piece.clear_bit(dragger.old_idx) #TEMPORARY
 
             if event.type == p.MOUSEBUTTONUP:
                 if dragger.is_dragging:
@@ -81,9 +84,10 @@ def main():
                     new_idx = game.coord_to_idx(posX, posY)
                     print(new_idx)
                     old_idx = dragger.get_old_idx()
+                    dragger.piece.set_bit(dragger.old_idx) #TEMPORARY
                     board_to_clear = game.get_proper_board(new_idx)
                     move_success = False
-                    valid_moves = game.get_valid_moves(white_turn)
+
                     for move in valid_moves:
                         print(f"from: {move.get_from_idx()}")
                         if move.get_from_idx() == old_idx and move.get_to_idx() == new_idx:

@@ -24,6 +24,13 @@ class GameState:
         y = posY // SQ_SIZE
         # print(posX, posY)
         return (7 - y) * 8 + x
+    
+    def idx_to_coord(self, idx: int) -> tuple:
+        x = idx % 8
+        y = 7 - (idx // 8)
+        posX = x * SQ_SIZE
+        posY = y * SQ_SIZE
+        return posX, posY
 
     def load(self, images: dict) -> None:
         for i in range(64):
@@ -45,11 +52,14 @@ class GameState:
                 rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 pygame.draw.rect(self.surface, color, rect)
 
-    def show_valid_moves(self, white_turn):
-        if white_turn:
-            pass
-        else:
-            pass
+    def show_valid_moves(self, moves:list[Move]) -> None:
+        for move in moves:
+            idx = move.get_from_idx()
+            row, col = self.idx_to_coord(idx)
+            rect = (col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+            color = (255,255,102)
+            pygame.draw.rect(surface=self.surface, color=color, rect=rect)
+            
     
     def get_proper_board(self, idx) -> BitBoard:
         for key, board in self.board.get_piece_boards().items():
@@ -65,15 +75,19 @@ class GameState:
         moves.extend(self.board.get_pawn_moves(white_turn))
         moves.extend(self.board.get_knight_moves(white_turn))
         moves.extend(self.board.get_king_moves(white_turn))
-
+        
         return moves
 
     def last_move_valid(self, moved_piece, white_moved_last) -> bool:
         prev_move = self.move_history[-1]
         occupancy = self.board.get_occupancy_board()
+        # print("occupancy")
+        # BitBoard.static_print(occupancy)
         
         # 1. is my king in check
-        all_attacks = self.board.get_all_attack_squares(occupancy, white_moved_last)
+        all_attacks = self.board.get_all_attack_squares(occupancy, not white_moved_last) # get enemy attacks
+        print(f"HERE ARE ALL OF THE ATTACKS AFTER WHITE:{white_moved_last} moved:")
+        BitBoard.static_print(all_attacks)
         king_bboard = self.board.bitboards["wK" if white_moved_last else "bK"].board
         if king_bboard & all_attacks > 0: return False # if king is on an attacked square move is invalid
 

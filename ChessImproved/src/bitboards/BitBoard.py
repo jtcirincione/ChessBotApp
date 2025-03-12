@@ -15,7 +15,7 @@ class BitBoard():
         return (board >> np.uint64(idx)) & np.uint64(1)
     
     @staticmethod
-    def static_set_bit(board, idx: int) -> None:
+    def static_set_bit(board, idx: int) -> np.uint64:
         board |= (np.uint64(1) << np.uint64(idx))
         return board
     
