@@ -55,7 +55,7 @@ def main():
         game.load(IMAGES)
         
         if dragger.is_dragging:
-            game.show_valid_moves(valid_moves)
+            game.show_valid_moves(dragger.old_idx, valid_moves)
             dragger.update_mouse(p.mouse.get_pos())
             dragger.update_blit(game.surface)
 
@@ -82,16 +82,13 @@ def main():
                 if dragger.is_dragging:
                     posX, posY = p.mouse.get_pos()
                     new_idx = game.coord_to_idx(posX, posY)
-                    print(new_idx)
                     old_idx = dragger.get_old_idx()
                     dragger.piece.set_bit(dragger.old_idx) #TEMPORARY
                     board_to_clear = game.get_proper_board(new_idx)
                     move_success = False
 
                     for move in valid_moves:
-                        print(f"from: {move.get_from_idx()}")
                         if move.get_from_idx() == old_idx and move.get_to_idx() == new_idx:
-                            print("lfdksfjslkfjsdlkfajsdlfkasjdflkasdjf")
                             move_success = game.move(dragger.piece, board_to_clear, move, False)
                             break
                     if move_success:

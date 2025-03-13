@@ -11,10 +11,10 @@ STARTING_POSITIONS = {
     "bB":  np.uint64(0b0010010000000000000000000000000000000000000000000000000000000000),  # C8, F8
     "wR":  np.uint64(0b0000000000000000000000000000000000000000000000000000000010000001),  # A1, H1
     "bR":  np.uint64(0b1000000100000000000000000000000000000000000000000000000000000000),  # A8, H8
-    "wQ":  np.uint64(0b0000000000000000000000000000000000000000000000000000000000010000),  # D1
-    "bQ":  np.uint64(0b0001000000000000000000000000000000000000000000000000000000000000),  # D8
-    "wK":  np.uint64(0b0000000000000000000000000000000000000000000000000000000000001000),  # E1
-    "bK":  np.uint64(0b0000100000000000000000000000000000000000000000000000000000000000),  # E8
+    "wQ":  np.uint64(0b0000000000000000000000000000000000000000000000000000000000001000),  # D1
+    "bQ":  np.uint64(0b0000100000000000000000000000000000000000000000000000000000000000),  # D8
+    "wK":  np.uint64(0b0000000000000000000000000000000000000000000000000000000000010000),  # E1
+    "bK":  np.uint64(0b0001000000000000000000000000000000000000000000000000000000000000),  # E8
     }
 
 NOT_GH_MASK = np.uint64(
@@ -141,10 +141,10 @@ class Chessboard:
             else:
                 potential_move = (board >> np.uint64(-move))
 
-            if move == -1 or move == -9 or move == 7: ## if piece is moving to the right
-                potential_move &= NOT_A_MASK
-            if move == 1 or move == 9 or move == -7: ## if piece is moving to the left
+            if move == -1 or move == -9 or move == 7: ## if piece is moving to the left
                 potential_move &= NOT_H_MASK
+            if move == 1 or move == 9 or move == -7: ## if piece is moving to the right
+                potential_move &= NOT_A_MASK
 
             king_move |= potential_move
         return king_move
@@ -175,20 +175,15 @@ class Chessboard:
         return (pawn << 8) & DOUBLE_PUSH_WP_MASK if is_white else (pawn >> 8) & DOUBLE_PUSH_BP_MASK
 
     def get_bishop_attacks(self, idx, blockers, white_turn):
-        attacks = get_bishop_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces
-        # print(f"bishop attacks at idx: {idx}")
-        # BitBoard.static_print(attacks)
+        attacks = get_bishop_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces)
         return attacks
     
     def get_rook_attacks(self, idx, blockers, white_turn):
         attacks = get_rook_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces
-        # print(f"rook attacks at idx: {idx}")
-        # BitBoard.static_print(attacks)
         return attacks    
+    
     def get_queen_attacks(self, idx, blockers, white_turn):
         attacks = get_queen_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces
-        print(f"queen attacks at idx: {idx} and white turn: {white_turn}")
-        BitBoard.static_print(attacks)
         return attacks # get attacks excluding captures on my colored pieces
     
     def get_all_attack_squares(self, blockers, white_turn):
@@ -392,13 +387,16 @@ class Chessboard:
 
         # castling
         castle_idx = 4 if white_turn else 60
-        if king_board == castle_idx:
+        if BitBoard.bit_scan_forward(king_board) == castle_idx:
+            print("KING IS ON CASTLE INDEX")
             # queen side castle
             to_idx = 2 if white_turn else 58
-            moves.append(Move(from_idx, to_idx, Move.QUEEN_CASTLE))
+            if (1 << np.uint64(castle_idx - 1) & occupancy) == 0 and (1 << np.uint64(castle_idx - 2) & occupancy) == 0 and (1 << np.uint64(castle_idx - 3) & occupancy) == 0:
+                moves.append(Move(from_idx, to_idx, Move.QUEEN_CASTLE))
             # king side castle
             to_idx = 6 if white_turn else 62
-            moves.append(Move(from_idx, to_idx, Move.KING_CASTLE))
+            if (1 << np.uint64(castle_idx + 1) & occupancy) == 0 and (1 << np.uint64(castle_idx + 2) & occupancy) == 0:
+                moves.append(Move(from_idx, to_idx, Move.KING_CASTLE))
 
         return moves 
 
