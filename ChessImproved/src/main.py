@@ -50,6 +50,9 @@ illuminate_white = illuminate_black = False
 def main():
     global exit, white_turn
     valid_moves = []
+    promotion_color = None
+    promotion_square = -1
+    promoting = False
     while not exit:
         game.show_bg()
         game.load(IMAGES)
@@ -60,6 +63,10 @@ def main():
             dragger.update_blit(game.surface)
 
 
+        if promoting:
+            # Draw options for promotion
+            game.show_promotion_options(promotion_color, IMAGES)
+            
 
         # check for mouse/key events
         for event in p.event.get():
@@ -69,6 +76,15 @@ def main():
 
             if event.type == p.MOUSEBUTTONDOWN:
                 posX, posY = p.mouse.get_pos()
+                
+                if promoting:
+                    selected_piece = game.get_promotion_choice(posX, posY, not white_turn) #confusing but we switched turns technically
+                    if selected_piece:
+                        # Replace pawn with chosen piece
+                        game.replace_pawn(dragger.new_idx, selected_piece)
+                        promoting = False
+                    continue
+
                 idx = game.coord_to_idx(posX, posY)
                 board = game.get_proper_board(idx)
                 if board and ((board.color == "white" and white_turn) or (board.color == "black" and not white_turn)):
@@ -76,6 +92,9 @@ def main():
                     dragger.update_mouse(p.mouse.get_pos())
                     dragger.piece.set_bit(dragger.old_idx) #TEMPORARY
                     valid_moves = game.get_valid_moves(white_turn)
+                    if len(valid_moves) == None:
+                        print("White wins" if white_turn else "Black wins")
+                        exit = True
                     dragger.piece.clear_bit(dragger.old_idx) #TEMPORARY
 
             if event.type == p.MOUSEBUTTONUP:
@@ -87,9 +106,16 @@ def main():
                     board_to_clear = game.get_proper_board(new_idx)
                     move_success = False
 
+                    if (dragger.piece.name == "wp" and new_idx >= 56) or (dragger.piece.name == "bp" and new_idx <= 7):
+                        promoting = True  # Set the flag to indicate we need to promote
+                        promotion_color = 'w' if white_turn else 'b'
+
                     for move in valid_moves:
                         if move.get_from_idx() == old_idx and move.get_to_idx() == new_idx:
-                            move_success = game.move(dragger.piece, board_to_clear, move, False)
+                            # if promoting:
+                                # if not selected_piece or (move.get_flags() != selected_piece and move.get_flags() != selected_piece + 4):
+                                #     continue
+                            move_success = game.move(dragger.piece, board_to_clear, move)
                             break
                     if move_success:
                         dragger.drag(new_idx)

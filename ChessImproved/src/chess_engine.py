@@ -59,8 +59,54 @@ class GameState:
                 rect = ((idx % 8) * SQ_SIZE, (7 - (idx // 8)) * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 color = (255,255,102)
                 pygame.draw.rect(surface=self.surface, color=color, rect=rect)
-            
-    
+
+    def show_promotion_options(self, color, IMAGES):
+        """ Draws promotion choices centered above the board with proper spacing. """
+        options = ["Q", "R", "B", "N"]
+        option_size = 60  # Slightly larger squares for better visibility
+        total_width = len(options) * option_size
+        x_offset = (WIDTH - total_width) // 2  # Centering the options
+        y_offset = 20 if color == "w" else HEIGHT - 80  # Offset from the top or bottom
+
+        for i, piece in enumerate(options):
+            rect = (x_offset + i * option_size, y_offset, option_size, option_size)
+            pygame.draw.rect(self.surface, (200, 200, 200), rect, border_radius=5)  # Light gray with rounded corners
+            self.surface.blit(IMAGES[f"{color}{piece}"], (x_offset + i * option_size + 5, y_offset + 5))  # Slight padding
+
+    def get_promotion_choice(self, x, y, color):
+        """ Detects which piece was selected for promotion based on the Y-coordinate. """
+        # Adjusting the size based on scaling and positioning
+        option_size = 60  # Same as in show_promotion_options
+        total_width = 4 * option_size
+        x_offset = (WIDTH - total_width) // 2  # Centering the options
+
+        # Calculating the range for each piece based on the scaled size
+        if x > x_offset and x < x_offset + option_size:
+            return Move.QUEEN_PROMO
+        elif x > x_offset + option_size and x < x_offset + 2 * option_size:
+            return Move.ROOK_PROMO
+        elif x > x_offset + 2 * option_size and x < x_offset + 3 * option_size:
+            return Move.BISHOP_PROMO
+        elif x > x_offset + 3 * option_size and x < x_offset + 4 * option_size:
+            return Move.KNIGHT_PROMO
+
+        return None  # Default if no valid area is clicked
+        
+
+    def replace_pawn(self, square, piece):
+        """ Replaces the promoted pawn with the chosen piece. """
+        color = "w" if square >= 56 else "b"
+        if piece == Move.QUEEN_PROMO:
+            piece = "Q"
+        if piece == Move.ROOK_PROMO:
+            piece = "R"
+        if piece == Move.KNIGHT_PROMO:
+            piece = "N"
+        if piece == Move.BISHOP_PROMO:
+            piece = "B"
+        self.board.bitboards[f"{color}p"].clear_bit(square)
+        self.board.bitboards[f"{color}{piece}"].set_bit(square)
+
     def get_proper_board(self, idx) -> BitBoard:
         for key, board in self.board.get_piece_boards().items():
             if board.get_bit(idx) == 1:
@@ -85,7 +131,18 @@ class GameState:
         # 1. is my king in check
         all_attacks = self.board.get_all_attack_squares(occupancy, not white_moved_last) # get enemy attacks
         king_bboard = self.board.bitboards["wK" if white_moved_last else "bK"].board
+
         if king_bboard & all_attacks > 0: return False # if king is on an attacked square move is invalid
+
+        if prev_move.get_flags() == Move.EP_CAPTURE:
+            # if len(self.move_history) < 2: # NOT SURE IF WE EVER RUN INTO THIS SCENARIO
+            #     return False
+            move_before_last = self.move_history[-2]
+            if move_before_last.get_flags() != Move.DOUBLE_PAWN_PUSH:
+                return False
+            if abs(int(move_before_last.get_from_idx()) - int(prev_move.get_to_idx())) != 8:
+                print("oh no")
+                return False
 
         # 2. check if move is a castle
         castle_idx = 4 if white_moved_last else 60
@@ -116,7 +173,7 @@ class GameState:
             # if cleared_piece:
             #     return False
             # occupancy &= ~np.uint64(1 << (castle_idx - 2)) # make sure to mask out moved king from occupancy board
-            # LEFT_ROOK = 0 if white_moved_last else 56
+            LEFT_ROOK = 0 if white_moved_last else 56
             # # to do this we need to: 1. check if the 3 squares to the left of the king are occupied
             # if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << LEFT_ROOK) <= 0:
             #     return False # FALSE bc we can't see our right rook ( we treat our king as the enemy here so our rook isn't masked out)
@@ -165,15 +222,42 @@ class GameState:
             self.move_history.append(move)
             if move.get_flags() == Move.KING_CASTLE:
                 self.board.bitboards["wR" if white_turn else "bR"].move_piece(7 if white_turn else 63, 5 if white_turn else 61)
-            if move.get_flags() == Move.QUEEN_CASTLE:
+            elif move.get_flags() == Move.QUEEN_CASTLE:
                 pass
+            elif move.get_flags() == Move.EP_CAPTURE:
+                self.board.bitboards["bp"].clear_bit(end - 8) if white_turn else self.board.bitboards["wp"].clear_bit(end + 8)
+                pass
+            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
+            #     board_to_set.clear_bit(end)
+            #     self.board.bitboards["wR" if white_turn else "bR"].set_bit(end)
+            # elif move.get_flags() == Move.QUEEN_PROMO or move.get_flags() == Move.QUEEN_CAP_PROMO:
+            #     board_to_set.clear_bit(end)
+            #     self.board.bitboards["wQ" if white_turn else "bQ"].set_bit(end)
+            # elif move.get_flags() == Move.BISHOP_PROMO or move.get_flags() == Move.BISHOP_CAP_PROMO:
+            #     board_to_set.clear_bit(end)
+            #     self.board.bitboards["wB" if white_turn else "bB"].set_bit(end)
+            # elif move.get_flags() == Move.KNIGHT_PROMO or move.get_flags() == Move.KNIGHT_CAP_PROMO:
+            #     board_to_set.clear_bit(end)
+            #     self.board.bitboards["wN" if white_turn else "bN"].set_bit(end)
         else:
             board_to_set.move_piece(end, start)
             if board_to_clear:
                 board_to_clear.set_bit(end)
             if move.get_flags() == Move.KING_CASTLE:
                 self.board.bitboards["wR" if white_turn else "bR"].move_piece(5 if white_turn else 61, 7 if white_turn else 63)
-            if move.get_flags() == Move.QUEEN_CASTLE:
+            elif move.get_flags() == Move.QUEEN_CASTLE:
                 pass
+            elif move.get_flags() == Move.EP_CAPTURE:
+                self.board.bitboards["bp"].set_bit(move.get_to_idx() - 8) if white_turn else self.board.bitboards["wp"].set_bit(move.get_to_idx() + 8)
+            
+            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
+            #     pass
+            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
+            #     pass
+            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
+            #     pass
+            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
+            #     pass
+
             self.move_history.pop()
         return True

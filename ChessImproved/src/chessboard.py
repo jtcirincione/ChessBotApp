@@ -166,17 +166,28 @@ class Chessboard:
     def get_pawn_attacks(self, idx, white):
         return self.WHITE_PAWN_ATTACKS[idx] if white else self.BLACK_PAWN_ATTACKS[idx]
     
-    def get_pawn_single_pushes(self, idx, is_white):
+    def get_pawn_ep_attacks(self, idx, is_white):
+        pawn_ep_attacks = np.uint64(0)
+        enemy_ep_potential_board = self.bitboards['bp'].board & DOUBLE_PUSH_BP_MASK if is_white else self.bitboards['wp'].board & DOUBLE_PUSH_WP_MASK
+        if enemy_ep_potential_board & np.uint64(1 << (idx + 1)) > 0: # if pawn to the right on our ep row
+            pawn_ep_attacks |= np.uint64(1 << (idx + 9)) if is_white else np.uint64(1 << (idx - 7))
+        
+        if enemy_ep_potential_board & np.uint64(1 << (idx - 1)) > 0: # if pawn to the left on our ep row
+            pawn_ep_attacks |= np.uint64(1 << (idx + 7)) if is_white else np.uint64(1 << (idx - 9))
+        return pawn_ep_attacks
+
+    def get_pawn_single_pushes(self, idx, occupancy, is_white):
         pawn  = np.uint64(np.uint64(1) << np.uint64(idx))
-        return (pawn << 8) & SINGLE_PUSH_WP_MASK if is_white else (pawn >> 8) & SINGLE_PUSH_BP_MASK
+        return ((pawn << 8) & SINGLE_PUSH_WP_MASK) & ~occupancy if is_white else ((pawn >> 8) & SINGLE_PUSH_BP_MASK) & ~occupancy
     
-    def get_pawn_double_pushes(self, idx, is_white):
-        pawn = self.get_pawn_single_pushes(idx, is_white)
-        return (pawn << 8) & DOUBLE_PUSH_WP_MASK if is_white else (pawn >> 8) & DOUBLE_PUSH_BP_MASK
+    def get_pawn_double_pushes(self, pawn_single_push, occupancy, is_white):
+        return ((pawn_single_push << 8) & DOUBLE_PUSH_WP_MASK) & ~occupancy if is_white else ((pawn_single_push >> 8) & DOUBLE_PUSH_BP_MASK) & ~occupancy
 
     def get_bishop_attacks(self, idx, blockers, white_turn):
-        attacks = get_bishop_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces)
-        return attacks
+        attacks = get_bishop_attacks(idx, blockers)  # get attacks excluding captures on my colored pieces)
+        print(f"BISHOP ATTACKS AT IDX {idx}")
+        BitBoard.static_print(attacks)
+        return attacks & ~self.get_color_board(white_turn)
     
     def get_rook_attacks(self, idx, blockers, white_turn):
         attacks = get_rook_attacks(idx, blockers) & ~self.get_color_board(white_turn) # get attacks excluding captures on my colored pieces
@@ -191,7 +202,7 @@ class Chessboard:
         bishop_board = self.bitboards['wB' if white_turn else 'bB'].board
         rook_board = self.bitboards['wR' if white_turn else 'bR'].board
         queen_board = self.bitboards['wQ' if white_turn else 'bQ'].board
-        pawn_board = self.bitboards['wB' if white_turn else 'bB'].board
+        pawn_board = self.bitboards['wp' if white_turn else 'bp'].board
         knight_board = self.bitboards['wN' if white_turn else 'bN'].board
         king_board = self.bitboards['wK' if white_turn else 'bK'].board
 
@@ -238,15 +249,20 @@ class Chessboard:
 
         # Pawns
         pawn_board = self.bitboards['wp' if white_turn else 'bp'].board
+
+
         while pawn_board:
             from_idx = BitBoard.bit_scan_forward(pawn_board)
             pawn_attacks = self.get_pawn_attacks(from_idx, white_turn) & enemy_pieces
-
+            pawn_ep_attacks = self.get_pawn_ep_attacks(from_idx, white_turn)
             # GENERATE EP CAPTURES HERE
+            if pawn_ep_attacks > 0:
+                print("EP ATTACKS:")
+                BitBoard.static_print(pawn_ep_attacks)
 
-            pawn_single_pushes = self.get_pawn_single_pushes(from_idx, white_turn) & ~occupancy
+            pawn_single_pushes = self.get_pawn_single_pushes(from_idx, occupancy, white_turn)
 
-            pawn_double_pushes = self.get_pawn_double_pushes(from_idx, white_turn) & ~occupancy
+            pawn_double_pushes = self.get_pawn_double_pushes(pawn_single_pushes, occupancy, white_turn)
             while pawn_attacks:
                 to_idx = BitBoard.bit_scan_forward(pawn_attacks)
                 if (to_idx >= 56):
@@ -258,6 +274,10 @@ class Chessboard:
                 else:
                     moves.append(Move(from_idx, to_idx, Move.CAPTURE))
                 pawn_attacks &= pawn_attacks - 1
+            while pawn_ep_attacks:
+                to_idx = BitBoard.bit_scan_forward(pawn_ep_attacks)
+                moves.append(Move(from_idx, to_idx, Move.EP_CAPTURE))
+                pawn_ep_attacks &= pawn_ep_attacks - 1
             while pawn_single_pushes:
                 to_idx = BitBoard.bit_scan_forward(pawn_single_pushes)
                 if (to_idx >= 56):
@@ -271,6 +291,7 @@ class Chessboard:
                 pawn_single_pushes &= pawn_single_pushes - 1
             while pawn_double_pushes:
                 to_idx = BitBoard.bit_scan_forward(pawn_double_pushes)
+                print(f"ep cap to idx: {to_idx}")
                 moves.append(Move(from_idx, to_idx, Move.DOUBLE_PAWN_PUSH))
                 pawn_double_pushes &= pawn_double_pushes - 1
 
@@ -388,7 +409,6 @@ class Chessboard:
         # castling
         castle_idx = 4 if white_turn else 60
         if BitBoard.bit_scan_forward(king_board) == castle_idx:
-            print("KING IS ON CASTLE INDEX")
             # queen side castle
             to_idx = 2 if white_turn else 58
             if (1 << np.uint64(castle_idx - 1) & occupancy) == 0 and (1 << np.uint64(castle_idx - 2) & occupancy) == 0 and (1 << np.uint64(castle_idx - 3) & occupancy) == 0:

@@ -85,6 +85,8 @@ def generate_bishop_masks():
 
 
 ROOK_MASKS = generate_rook_masks()
+# for mask in ROOK_MASKS:
+#     static_print(mask)
 BISHOP_MASKS = generate_bishop_masks()
 # for mask in ROOK_MASKS:
 #     static_print(mask)
@@ -210,6 +212,9 @@ def find_magic_number(square, is_rook):
     num_relevant_bits = bin(mask).count("1")  # Number of bits needed for unique indexing
     print(bin(mask))
     print(f"relevant bits: {num_relevant_bits}")
+    if (num_relevant_bits > 10):
+        print("this apparently has more than 10 bits")
+        static_print(mask)
     start_time = time.process_time()
     # Step 4: Find a magic number by trial and error
     while True:
