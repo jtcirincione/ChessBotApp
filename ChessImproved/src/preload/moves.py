@@ -100,7 +100,6 @@ def generate_blocker_variations(mask: int):
         for j in range(num_bits):
             if (np.uint64(i) & (np.uint64(1) << np.uint64(j))) != 0:
                 subset |= np.uint64(1) << np.uint64(bits[j])
-        # static_print(mask)
         blockers.append(subset)
     
     return blockers
@@ -164,7 +163,7 @@ def compute_bishop_attacks(square: int, blockers: int):
             attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r)))
             if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r))):
                 break
-    # print(f"Attack on square {square}: {static_print(attacks)}")
+
     return attacks
 
 
@@ -212,9 +211,7 @@ def find_magic_number(square, is_rook):
     num_relevant_bits = bin(mask).count("1")  # Number of bits needed for unique indexing
     print(bin(mask))
     print(f"relevant bits: {num_relevant_bits}")
-    if (num_relevant_bits > 10):
-        print("this apparently has more than 10 bits")
-        static_print(mask)
+
     start_time = time.process_time()
     # Step 4: Find a magic number by trial and error
     while True:
@@ -231,10 +228,7 @@ def find_magic_number(square, is_rook):
                 success = False
                 break
             lookup_table[index] = attack_sets[blockers]
-        # if not success:
-        #     print(f"Collision at square {square}: magic {magic:#x}")
-        #     for blockers, index in collision_info:
-        #         print(f"  Blockers: {blockers} → Index: {index}")
+
         if success:
             end_time = time.process_time()
             print(f"magic found for idx: {square} in {end_time - start_time} seconds")
@@ -307,7 +301,7 @@ def get_bishop_attacks(square, blockers):
     """Retrieves bishop attacks using magic bitboards."""
     magic = bishop_magics[square]
     mask = BISHOP_MASKS[square]
-    # print(f"mask: {static_print(mask)}")
+
     relevant_blockers = np.uint64(blockers) & mask  # Only consider relevant blockers
     index = (relevant_blockers * magic) >> np.uint64(64 - len(bishop_attack_table[str(square)]).bit_length())
     return bishop_attack_table[str(square)][str(index)]

@@ -23,7 +23,6 @@ class GameState:
     def coord_to_idx(self, posX: int, posY: int) -> tuple:
         x = posX // SQ_SIZE
         y = posY // SQ_SIZE
-        # print(posX, posY)
         return (7 - y) * 8 + x
     
     def idx_to_coord(self, idx: int) -> tuple:
@@ -38,9 +37,6 @@ class GameState:
             for key, board in self.board.get_piece_boards().items():
                 if board.get_bit(i):
                     self.surface.blit(images[key], ((i % 8) * SQ_SIZE, (7 - (i // 8)) * SQ_SIZE))
-                    # print(board.name)
-                    # board.print()
-                    # print()
                     break
     
     def show_bg(self):

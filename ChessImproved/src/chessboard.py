@@ -59,8 +59,6 @@ class Chessboard:
         self.WHITE_PAWN_ATTACKS, self.BLACK_PAWN_ATTACKS = compute_pawn_attacks()
         
         self.precompute_kings()
-        # BitBoard.static_print(BitBoard.generate_bishop_mask(24))
-        # BitBoard.static_print(magics.get_queen_attacks(0, 0))
 
     def get_piece_boards(self) -> dict[str, BitBoard]:
         return {
@@ -88,15 +86,11 @@ class Chessboard:
         knight_moves = []
         for i in range(64):
             knight_moves.append(self.generate_knight_moves(i))
-            # print(f"knight moves at idx {i}")
-            # BitBoard.static_print(knight_moves[i])
         return knight_moves
     
     def generate_knight_moves(self, idx):
         knight_move = np.uint64(0)
         board = BitBoard.static_set_bit(np.uint64(0), idx)
-        # print("KNIGHT AT INDEX")
-        # BitBoard.static_print(board)
         moves = [
             6,  # top left move restrict from G and H
             15,  # top left move restrict from H
@@ -254,10 +248,6 @@ class Chessboard:
             from_idx = BitBoard.bit_scan_forward(pawn_board)
             pawn_attacks = self.get_pawn_attacks(from_idx, white_turn) & enemy_pieces
             pawn_ep_attacks = self.get_pawn_ep_attacks(from_idx, white_turn)
-            # GENERATE EP CAPTURES HERE
-            # if pawn_ep_attacks > 0:
-            #     print("EP ATTACKS:")
-            #     BitBoard.static_print(pawn_ep_attacks)
 
             pawn_single_pushes = self.get_pawn_single_pushes(from_idx, occupancy, white_turn)
 
