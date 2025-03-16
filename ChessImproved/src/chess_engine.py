@@ -13,6 +13,7 @@ class GameState:
         self.board = Chessboard()
         self.surface = surface
         self.move_history: list[Move] = []
+        self.white_turn = True
 
 
     """
@@ -107,6 +108,9 @@ class GameState:
         self.board.bitboards[f"{color}p"].clear_bit(square)
         self.board.bitboards[f"{color}{piece}"].set_bit(square)
 
+    def current_turn(self):
+        return "white" if self.white_turn else "black"
+
     def get_proper_board(self, idx) -> BitBoard:
         for key, board in self.board.get_piece_boards().items():
             if board.get_bit(idx) == 1:
@@ -123,6 +127,12 @@ class GameState:
         moves.extend(self.board.get_king_moves(white_turn))
         
         return moves
+    
+    def king_in_check(self, white_king):
+        all_attacks = self.board.get_all_attack_squares(self.board.get_occupancy_board(), not white_king) # get enemy attacks
+        king_bboard = self.board.bitboards["wK" if white_king else "bK"].board
+
+        if king_bboard & all_attacks > 0: return True
 
     def last_move_valid(self, moved_piece, cleared_piece, white_moved_last) -> bool:
         prev_move = self.move_history[-1]
@@ -132,7 +142,8 @@ class GameState:
         all_attacks = self.board.get_all_attack_squares(occupancy, not white_moved_last) # get enemy attacks
         king_bboard = self.board.bitboards["wK" if white_moved_last else "bK"].board
 
-        if king_bboard & all_attacks > 0: return False # if king is on an attacked square move is invalid
+        if king_bboard & all_attacks > 0: return False
+        
 
         if prev_move.get_flags() == Move.EP_CAPTURE:
             # if len(self.move_history) < 2: # NOT SURE IF WE EVER RUN INTO THIS SCENARIO
@@ -186,7 +197,7 @@ class GameState:
                     return False
         return True
 
-    def get_valid_moves(self, white_turn) -> list[Move]:
+    def get_valid_moves_by_color(self, white_turn):
         """
         generates pseudolegal moves and tries each move to check validity
         """
@@ -197,6 +208,22 @@ class GameState:
             bboard_to_clear = self.get_proper_board(move.get_to_idx())
             self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move)
             if self.last_move_valid(bboard_to_move, bboard_to_clear, white_turn) == True:
+                legal_moves.append(move)
+            self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move, undo=True)
+
+        return legal_moves
+
+    def get_valid_moves(self) -> list[Move]:
+        """
+        generates pseudolegal moves and tries each move to check validity
+        """
+        pseudo_moves: list[Move] = self.get_pseudolegal_moves(self.white_turn)
+        legal_moves = []
+        for move in pseudo_moves:
+            bboard_to_move = self.get_proper_board(move.get_from_idx())
+            bboard_to_clear = self.get_proper_board(move.get_to_idx())
+            self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move)
+            if self.last_move_valid(bboard_to_move, bboard_to_clear, not self.white_turn) == True:
                 legal_moves.append(move)
             self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move, undo=True)
 
@@ -227,18 +254,6 @@ class GameState:
             elif move.get_flags() == Move.EP_CAPTURE:
                 self.board.bitboards["bp"].clear_bit(end - 8) if white_turn else self.board.bitboards["wp"].clear_bit(end + 8)
                 pass
-            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
-            #     board_to_set.clear_bit(end)
-            #     self.board.bitboards["wR" if white_turn else "bR"].set_bit(end)
-            # elif move.get_flags() == Move.QUEEN_PROMO or move.get_flags() == Move.QUEEN_CAP_PROMO:
-            #     board_to_set.clear_bit(end)
-            #     self.board.bitboards["wQ" if white_turn else "bQ"].set_bit(end)
-            # elif move.get_flags() == Move.BISHOP_PROMO or move.get_flags() == Move.BISHOP_CAP_PROMO:
-            #     board_to_set.clear_bit(end)
-            #     self.board.bitboards["wB" if white_turn else "bB"].set_bit(end)
-            # elif move.get_flags() == Move.KNIGHT_PROMO or move.get_flags() == Move.KNIGHT_CAP_PROMO:
-            #     board_to_set.clear_bit(end)
-            #     self.board.bitboards["wN" if white_turn else "bN"].set_bit(end)
         else:
             board_to_set.move_piece(end, start)
             if board_to_clear:
@@ -249,15 +264,7 @@ class GameState:
                 pass
             elif move.get_flags() == Move.EP_CAPTURE:
                 self.board.bitboards["bp"].set_bit(move.get_to_idx() - 8) if white_turn else self.board.bitboards["wp"].set_bit(move.get_to_idx() + 8)
-            
-            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
-            #     pass
-            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
-            #     pass
-            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
-            #     pass
-            # elif move.get_flags() == Move.ROOK_PROMO or move.get_flags() == Move.ROOK_CAP_PROMO:
-            #     pass
 
             self.move_history.pop()
+        self.white_turn = not self.white_turn
         return True

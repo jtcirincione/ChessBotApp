@@ -1,8 +1,8 @@
 import os, numpy as np, random, warnings, time, json
 
-NOT_A_MASK = np.uint64(
-    0b0111111101111111011111110111111101111111011111110111111101111111)
 NOT_H_MASK = np.uint64(
+    0b0111111101111111011111110111111101111111011111110111111101111111)
+NOT_A_MASK = np.uint64(
     0b1111111011111110111111101111111011111110111111101111111011111110)
 
 filename = "magics.json"
@@ -85,24 +85,22 @@ def generate_bishop_masks():
 
 
 ROOK_MASKS = generate_rook_masks()
-# for mask in ROOK_MASKS:
-#     static_print(mask)
+
 BISHOP_MASKS = generate_bishop_masks()
-# for mask in ROOK_MASKS:
-#     static_print(mask)
+
 
 def generate_blocker_variations(mask: int):
     """Generates all possible blocker variations within the attack mask."""
     bits = [i for i in range(64) if (mask & np.uint64(1 << i)) != 0]
     num_bits = len(bits)
     blockers = []
-
     # Generate all subsets of blockers
     for i in range(2**num_bits):
         subset = np.uint64(0)
         for j in range(num_bits):
             if (np.uint64(i) & (np.uint64(1) << np.uint64(j))) != 0:
                 subset |= np.uint64(1) << np.uint64(bits[j])
+        # static_print(mask)
         blockers.append(subset)
     
     return blockers
@@ -149,6 +147,7 @@ def compute_bishop_attacks(square: int, blockers: int):
             attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r)))
             if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file + r))):
                 break
+    for r in range(1, 8):
         if rank - r >= 0 and file - r >= 0:
             attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r)))
             if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file - r))):
@@ -160,6 +159,7 @@ def compute_bishop_attacks(square: int, blockers: int):
             attacks |= (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r)))
             if blockers & (np.uint64(1) << np.uint64((rank + r) * 8 + (file - r))):
                 break
+    for r in range(1, 8):
         if rank - r >= 0 and file + r < 8:
             attacks |= (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r)))
             if blockers & (np.uint64(1) << np.uint64((rank - r) * 8 + (file + r))):

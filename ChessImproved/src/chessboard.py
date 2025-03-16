@@ -185,8 +185,7 @@ class Chessboard:
 
     def get_bishop_attacks(self, idx, blockers, white_turn):
         attacks = get_bishop_attacks(idx, blockers)  # get attacks excluding captures on my colored pieces)
-        print(f"BISHOP ATTACKS AT IDX {idx}")
-        BitBoard.static_print(attacks)
+
         return attacks & ~self.get_color_board(white_turn)
     
     def get_rook_attacks(self, idx, blockers, white_turn):
@@ -256,9 +255,9 @@ class Chessboard:
             pawn_attacks = self.get_pawn_attacks(from_idx, white_turn) & enemy_pieces
             pawn_ep_attacks = self.get_pawn_ep_attacks(from_idx, white_turn)
             # GENERATE EP CAPTURES HERE
-            if pawn_ep_attacks > 0:
-                print("EP ATTACKS:")
-                BitBoard.static_print(pawn_ep_attacks)
+            # if pawn_ep_attacks > 0:
+            #     print("EP ATTACKS:")
+            #     BitBoard.static_print(pawn_ep_attacks)
 
             pawn_single_pushes = self.get_pawn_single_pushes(from_idx, occupancy, white_turn)
 
@@ -291,7 +290,6 @@ class Chessboard:
                 pawn_single_pushes &= pawn_single_pushes - 1
             while pawn_double_pushes:
                 to_idx = BitBoard.bit_scan_forward(pawn_double_pushes)
-                print(f"ep cap to idx: {to_idx}")
                 moves.append(Move(from_idx, to_idx, Move.DOUBLE_PAWN_PUSH))
                 pawn_double_pushes &= pawn_double_pushes - 1
 
