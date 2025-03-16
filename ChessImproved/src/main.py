@@ -61,7 +61,7 @@ def main():
         game.load(IMAGES)
 
         if game.current_turn() == robot.color:
-            move, _ = robot.minimax(game, True, 2, float("-inf"), float("inf"))
+            move, _ = robot.minimax(game, True, 3, float("-inf"), float("inf"))
             game.move(game.get_proper_board(move.get_from_idx()), game.get_proper_board(move.get_to_idx()), move)
             print(f"I looked at {robot.move_count} moves")
         

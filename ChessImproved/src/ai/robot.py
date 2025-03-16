@@ -95,7 +95,7 @@ class Robot():
                 board_to_clear = game_state.get_proper_board(move.get_to_idx())
                 game_state.move(board_to_move, board_to_clear, move)
                 # print(f"board after move:\n{BitBoard.print_board_2(self.get_b_board(boards_copies))}")
-                _, current_eval = self.minimax(game_state, isMax=False, depth=depth-1, alpha=alpha, beta=beta)
+                _, current_eval = self.minimax(game_state, isMax=True, depth=depth-1, alpha=alpha, beta=beta)
                 game_state.move(board_to_move, board_to_clear, move, undo=True)
                 if current_eval < min_eval:
                     min_eval = current_eval

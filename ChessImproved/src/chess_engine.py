@@ -146,33 +146,18 @@ class GameState:
         
 
         if prev_move.get_flags() == Move.EP_CAPTURE:
-            # if len(self.move_history) < 2: # NOT SURE IF WE EVER RUN INTO THIS SCENARIO
-            #     return False
             move_before_last = self.move_history[-2]
             if move_before_last.get_flags() != Move.DOUBLE_PAWN_PUSH:
                 return False
             if abs(int(move_before_last.get_from_idx()) - int(prev_move.get_to_idx())) != 8:
-                print("oh no")
                 return False
 
         # 2. check if move is a castle
         castle_idx = 4 if white_moved_last else 60
         if prev_move.get_flags() == Move.KING_CASTLE:
-            # if cleared_piece:
-            #     return False
-            # occupancy &= ~np.uint64(1 << (castle_idx + 2)) # make sure to mask out moved king from occupancy board
-            print(f"KING CASTLE___________")
             RIGHT_ROOK = 7 if white_moved_last else 63
-            
-            # to do this we need to: 1. check if the 2 squares to the right of the king are occupied
-            # if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << RIGHT_ROOK) <= 0:
-            #     print("kign cant see right rook")
-            #     beanbert = self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last)
-            #     BitBoard.static_print(beanbert)
-            #     return False # FALSE bc we can't see our right rook ( we treat our king as the enemy here so our rook isn't masked out)
             # 2. check if the 2 squares right of the king are under attack
             if (all_attacks & np.uint64(1 << castle_idx + 1) > 0) or (all_attacks & np.uint64(1 << castle_idx + 2)) > 0:
-                print("ididanoopsie")
                 return False # False as one of or both of these squares are under attack
             # 3. check if the king/right rook have been moved by searching through the move history
             for move in self.move_history:
@@ -180,14 +165,7 @@ class GameState:
                     return False
 
         if prev_move.get_flags() == Move.QUEEN_CASTLE:
-            print(f"QUEEN CASTLE___________")
-            # if cleared_piece:
-            #     return False
-            # occupancy &= ~np.uint64(1 << (castle_idx - 2)) # make sure to mask out moved king from occupancy board
             LEFT_ROOK = 0 if white_moved_last else 56
-            # # to do this we need to: 1. check if the 3 squares to the left of the king are occupied
-            # if self.board.get_queen_attacks(castle_idx, occupancy, not white_moved_last) & np.uint64(1 << LEFT_ROOK) <= 0:
-            #     return False # FALSE bc we can't see our right rook ( we treat our king as the enemy here so our rook isn't masked out)
             # 2. ckeck if the 2 squares left of the king are under attack
             if (all_attacks & np.uint64(1 << castle_idx - 1) > 0) or (all_attacks & np.uint64(1 << castle_idx - 2)) > 0:
                 return False # False as one of or both of these squares are under attack
@@ -227,7 +205,7 @@ class GameState:
                 legal_moves.append(move)
             self.move(board_to_move=bboard_to_move, board_to_clear=bboard_to_clear, move=move, undo=True)
 
-        print(f"there are {len(legal_moves)} for current board configuration")
+        # print(f"there are {len(legal_moves)} for current board configuration")
         return legal_moves
 
     """
@@ -250,10 +228,10 @@ class GameState:
             if move.get_flags() == Move.KING_CASTLE:
                 self.board.bitboards["wR" if white_turn else "bR"].move_piece(7 if white_turn else 63, 5 if white_turn else 61)
             elif move.get_flags() == Move.QUEEN_CASTLE:
-                pass
+                self.board.bitboards["wR" if white_turn else "bR"].move_piece(0 if white_turn else 56, 3 if white_turn else 59)
             elif move.get_flags() == Move.EP_CAPTURE:
                 self.board.bitboards["bp"].clear_bit(end - 8) if white_turn else self.board.bitboards["wp"].clear_bit(end + 8)
-                pass
+
         else:
             board_to_set.move_piece(end, start)
             if board_to_clear:
